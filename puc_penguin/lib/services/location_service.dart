@@ -19,19 +19,34 @@ class LocationService {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      throw Exception('Permissões de localização permanentemente negadas. Ative nas configurações do aparelho.');
+      throw Exception(
+          'Permissões de localização permanentemente negadas. Ative nas configurações do aparelho.');
     }
 
     return await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
+      desiredAccuracy: LocationAccuracy.bestForNavigation,
     );
   }
 
   Stream<Position> getPositionStream() {
     return Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
+      locationSettings: AndroidSettings(
+        // bestForNavigation = máxima precisão do chip GPS, igual ao Pokémon GO
+        accuracy: LocationAccuracy.bestForNavigation,
+
+        // distanceFilter: 0 = atualiza a cada nova leitura do GPS,
+        // sem exigir deslocamento mínimo
+        distanceFilter: 0,
+
+        // intervalDuration: atualiza a cada 1 segundo
+        intervalDuration: const Duration(seconds: 1),
+
+        // Mantém o GPS ativo mesmo com a tela bloqueada
+        foregroundNotificationConfig: const ForegroundNotificationConfig(
+          notificationTitle: 'PUC Penguin',
+          notificationText: 'Rastreando sua localização no campus...',
+          enableWakeLock: true,
+        ),
       ),
     );
   }
