@@ -1,0 +1,27 @@
+import 'package:flutter/material.dart';
+
+enum Gender { male, female }
+
+class Player {
+  final String name;
+  final Gender gender;
+  final List<<StringString> unlockedEnvironmentIds;
+
+  Player({
+    required this.name,
+    required this.gender,
+    this.unlockedEnvironmentIds = const [],
+  });
+
+  Player copyWith({
+    String? name,
+    Gender? gender,
+    List<<StringString>? unlockedEnvironmentIds,
+  }) {
+    return Player(
+      name: name ?? this.name,
+      gender: gender ?? this.gender,
+      unlockedEnvironmentIds: unlockedEnvironmentIds ?? this.unlockedEnvironmentIds,
+    );
+  }
+}
