@@ -35,7 +35,11 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/onboarding': (context) => const OnboardingScreen(),
+        '/onboarding': (context) => const Scaffold(
+  body: Center(
+    child: Text('Onboarding em desenvolvimento'),
+  ),
+),
         '/': (context) => const HomeScreen(),
         '/game': (context) => const GameScreen(),
         '/map': (context) => const MapScreen(),
