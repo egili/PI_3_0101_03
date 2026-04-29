@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'screens/home_screen.dart';
 import 'screens/game_screen.dart';
 import 'screens/map_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase não inicializado: $e. Usando dados estáticos para Sprint 1.');
+  }
+
   runApp(
-    // ProviderScope é OBRIGATÓRIO para o Riverpod funcionar.
-    // Ele envolve todo o app e gerencia o ciclo de vida dos providers.
     const ProviderScope(
       child: MyApp(),
     ),
@@ -24,16 +31,16 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        useMaterial3: true,
       ),
-      // Definimos as rotas nomeadas aqui para poder usar
-      // Navigator.of(context).pushReplacementNamed('/game')
-      // em qualquer tela sem precisar importar as outras telas
       initialRoute: '/',
       routes: {
+        '/onboarding': (context) => const OnboardingScreen(),
         '/': (context) => const HomeScreen(),
         '/game': (context) => const GameScreen(),
         '/map': (context) => const MapScreen(),
       },
+
     );
   }
 }
