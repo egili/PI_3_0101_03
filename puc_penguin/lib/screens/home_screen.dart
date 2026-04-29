@@ -113,3 +113,23 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('PUC Penguin'),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          child: const Text('Iniciar Jogo'),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const GameScreen(),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
