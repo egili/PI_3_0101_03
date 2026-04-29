@@ -31,7 +31,6 @@ class StorageService {
     await prefs.setString(_keyUnlockedEnvironments, ids.join(','));
   }
 
-  // ---------- CARREGAR ----------
 
   /// Retorna o nome salvo, ou null se nunca foi salvo.
   Future<String?> loadPlayerName() async {
@@ -58,8 +57,6 @@ class StorageService {
     // Transforma "h15,dojoteca" de volta em ['h15', 'dojoteca']
     return raw.split(',');
   }
-
-  // ---------- LIMPAR ----------
 
   /// Apaga todo o progresso salvo (útil para "Novo Jogo").
   Future<void> clearAllData() async {

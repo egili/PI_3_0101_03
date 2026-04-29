@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
       // em qualquer tela sem precisar importar as outras telas
       initialRoute: '/',
       routes: {
-        '/': (context) => const WelcomeScreen(),
+        '/': (context) => const HomeScreen(),
         '/game': (context) => const GameScreen(),
         '/map': (context) => const MapScreen(),
       },

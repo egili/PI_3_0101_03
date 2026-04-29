@@ -18,7 +18,6 @@ class HomeScreen extends StatelessWidget {
             children: [
               const SizedBox(),
 
-              // 🔹 LOGO + TEXTO
               Column(
                 children: [
                   SizedBox(
@@ -44,7 +43,6 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
 
-              // 🔹 BOTÕES
               Column(
                 children: [
                   _buildButton(
@@ -71,7 +69,6 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
 
-              // 🔹 RODAPÉ
               Padding(
                 padding: EdgeInsets.only(bottom: size.height * 0.02),
                 child: Text(
@@ -109,26 +106,6 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
         child: Text(text, style: const TextStyle(fontSize: 18)),
-      ),
-    );
-  }
-}
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('PUC Penguin'),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          child: const Text('Iniciar Jogo'),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const GameScreen(),
-              ),
-            );
-          },
-        ),
       ),
     );
   }

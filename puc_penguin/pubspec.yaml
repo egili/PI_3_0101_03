@@ -42,7 +42,7 @@ dependencies:
   permission_handler: ^11.0.1
 
   # Estado
-  provider: ^6.0.5
+  flutter_riverpod: ^2.4.9
 
   # Armazenamento
   shared_preferences: ^2.2.2
