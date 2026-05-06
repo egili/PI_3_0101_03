@@ -31,7 +31,7 @@ class LocationService {
   Stream<Position> getPositionStream() {
     return Geolocator.getPositionStream(
       locationSettings: AndroidSettings(
-        // bestForNavigation = máxima precisão do chip GPS, igual ao Pokémon GO
+        // bestForNavigation = máxima precisão do chip GPS
         accuracy: LocationAccuracy.bestForNavigation,
 
         // distanceFilter: 0 = atualiza a cada nova leitura do GPS,
