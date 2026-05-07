@@ -2,20 +2,20 @@ class Environment {
   final String id;
   final String name;
   final String description;
+  final String audioAsset;
   final double latitude;
   final double longitude;
-  final double radius; // em metros
-  final String audioAsset;
+  final double radius;
   final bool isUnlocked;
 
   Environment({
     required this.id,
     required this.name,
     required this.description,
+    required this.audioAsset,
     required this.latitude,
     required this.longitude,
     required this.radius,
-    required this.audioAsset,
     this.isUnlocked = false,
   });
 
@@ -26,10 +26,10 @@ class Environment {
       id: id,
       name: name,
       description: description,
+      audioAsset: audioAsset,
       latitude: latitude,
       longitude: longitude,
       radius: radius,
-      audioAsset: audioAsset,
       isUnlocked: isUnlocked ?? this.isUnlocked,
     );
   }

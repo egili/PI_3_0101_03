@@ -20,7 +20,7 @@ class EnvironmentDetectionResult {
 class EnvironmentService {
   // Lista de ambientes do jogo — vem do repositório central
   final List<Environment> _environments =
-      MockEnvironmentRepository.allEnvironments;
+      staticEnvironments;
 
   /// Recebe a [position] atual do GPS e retorna o ambiente ativo,
   /// ou null se o jogador estiver fora de qualquer área.

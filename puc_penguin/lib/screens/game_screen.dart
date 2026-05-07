@@ -1,32 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart'; // necessário para HapticFeedback
 import 'package:geolocator/geolocator.dart';
 import '../services/location_service.dart';
-import '../services/environment_service.dart';
-import '../providers/game_provider.dart';
-import 'dart:async';
-
-// Mudamos de StatefulWidget para ConsumerStatefulWidget
-// porque precisamos acessar os providers do Riverpod (ref)
-class GameScreen extends ConsumerStatefulWidget {
-  const GameScreen({super.key});
-
-  @override
-  ConsumerState<GameScreen> createState() => _GameScreenState();
-}
-
-class _GameScreenState extends ConsumerState<GameScreen> {
-  final LocationService _locationService = LocationService();
-
-  // Instancia o novo serviço de detecção de ambientes
-  final EnvironmentService _environmentService = EnvironmentService();
-
-  StreamSubscription<Position>? _positionStreamSubscription;
-  String _locationMessage = 'Obtendo localização...';
-  String _coords = 'Lat: -, Lon: -';
-import 'package:geolocator/geolocator.dart';
-import '../services/location_service.dart';
-import '../utils/constants.dart';
+import '../constants/environments.dart';
+import '../models/environment.dart';
 import 'dart:async';
 
 class GameScreen extends StatefulWidget {
@@ -39,9 +16,22 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen> {
   final LocationService _locationService = LocationService();
   StreamSubscription<Position>? _positionStreamSubscription;
+
+  // ── Textos exibidos na tela (mesmo estilo original) ───────
   String _locationMessage = 'Obtendo localização...';
   String _coords = 'Lat: -, Lon: -';
   String _currentEnvironment = 'Nenhum ambiente próximo';
+
+  // ── Média móvel (invisível ao usuário, só suaviza os números) ──
+  // Guarda as últimas 5 leituras e exibe a média delas
+  final List<double> _latBuffer = [];
+  final List<double> _lonBuffer = [];
+  static const int _bufferSize = 5;
+
+  // ── Controle de vibração ──────────────────────────────────
+  // Guarda o ID do último ambiente detectado para vibrar
+  // apenas UMA vez ao entrar, não a cada atualização GPS
+  String? _lastEnvironmentId;
 
   @override
   void initState() {
@@ -51,19 +41,11 @@ class _GameScreenState extends State<GameScreen> {
 
   void _startTrackingLocation() async {
     try {
-      // Pega a posição inicial uma vez
-      Position position = await _locationService.getCurrentLocation();
-      _processPosition(position);
-
-      // Depois disso, fica ouvindo atualizações em tempo real
-      _positionStreamSubscription =
-          _locationService.getPositionStream().listen(
-        (Position position) {
-          _processPosition(position);
       Position position = await _locationService.getCurrentLocation();
       _updateLocationUI(position);
 
-      _positionStreamSubscription = _locationService.getPositionStream().listen(
+      _positionStreamSubscription =
+          _locationService.getPositionStream().listen(
         (Position position) {
           _updateLocationUI(position);
         },
@@ -98,54 +80,68 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  /// Centraliza todo o processamento de uma nova posição GPS.
-  /// Separa bem as responsabilidades: UI, provider e lógica de negócio.
-  void _processPosition(Position position) {
-    // 1. Delega a lógica de detecção para o serviço especializado
-    final result = _environmentService.detectEnvironment(position);
-
-    // 2. Busca o ambiente mais próximo (mesmo fora do raio) para informar o jogador
-    final nearest = _environmentService.findNearest(position);
-
-    // 3. Atualiza o provider global com o ID do ambiente atual (ou null)
-    //    Isso permite que qualquer widget na árvore reaja a essa mudança
-    ref.read(currentEnvironmentIdProvider.notifier).state =
-        result?.environment.id;
-
-    // 4. Atualiza o estado local da tela para refletir na UI
-    setState(() {
-      _locationMessage = 'Localização atualizada em tempo real';
-      _coords =
-          'Lat: ${position.latitude.toStringAsFixed(5)}, '
-          'Lon: ${position.longitude.toStringAsFixed(5)}';
-    });
-  }
-
   void _updateLocationUI(Position position) {
-    final environment = _checkActiveEnvironment(position);
+    // ── 1. Média móvel ──────────────────────────────────────
+    // Adiciona leitura e mantém só as últimas _bufferSize
+    _latBuffer.add(position.latitude);
+    _lonBuffer.add(position.longitude);
+    if (_latBuffer.length > _bufferSize) {
+      _latBuffer.removeAt(0);
+      _lonBuffer.removeAt(0);
+    }
+
+    // Calcula a média — isso elimina os "pulos" do GPS
+    final avgLat = _latBuffer.reduce((a, b) => a + b) / _latBuffer.length;
+    final avgLon = _lonBuffer.reduce((a, b) => a + b) / _lonBuffer.length;
+
+    // ── 2. Detecta ambiente ─────────────────────────────────
+    final environment = _checkActiveEnvironment(avgLat, avgLon);
+
+    // ── 3. Vibração ao entrar em nova área ──────────────────
+    // Só vibra se for um ambiente DIFERENTE do último detectado
+    if (environment != null && environment.id != _lastEnvironmentId) {
+      _lastEnvironmentId = environment.id;
+      _vibrate(); // toca a vibração
+    } else if (environment == null) {
+      // Saiu de todos os ambientes — reseta para vibrar na próxima entrada
+      _lastEnvironmentId = null;
+    }
+
+    // ── 4. Atualiza a UI no estilo original ─────────────────
     setState(() {
       _locationMessage = 'Localização atualizada em tempo real';
-      _coords = 'Lat: ${position.latitude}, Lon: ${position.longitude}';
+
+      // toStringAsFixed(6) = 6 casas decimais (~11cm de precisão)
+      // É mais estável que mostrar todos os decimais do double
+      _coords =
+          'Lat: ${avgLat.toStringAsFixed(6)}, Lon: ${avgLon.toStringAsFixed(6)}';
+
       _currentEnvironment = environment != null
           ? 'Você está em: ${environment.name}'
           : 'Nenhum ambiente próximo';
     });
   }
 
-  dynamic _checkActiveEnvironment(Position position) {
-    for (var env in AppEnvironments.environments) {
+  /// Detecta em qual ambiente o jogador está com base na posição suavizada.
+  Environment? _checkActiveEnvironment(double lat, double lon) {
+    for (var env in staticEnvironments) {
       double distance = Geolocator.distanceBetween(
-        position.latitude,
-        position.longitude,
-        env.latitude,
-        env.longitude,
+        lat, lon, env.latitude, env.longitude,
       );
-
       if (distance <= env.radius) {
         return env;
       }
     }
     return null;
+  }
+
+  /// Vibra o celular em padrão duplo (bum-bum) ao entrar em uma área.
+  /// HapticFeedback é nativo do Flutter — não precisa de pacote extra.
+  Future<void> _vibrate() async {
+    // Vibração pesada — sentida mesmo no bolso
+    await HapticFeedback.heavyImpact();
+    await Future.delayed(const Duration(milliseconds: 200));
+    await HapticFeedback.heavyImpact();
   }
 
   @override
@@ -156,9 +152,7 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Lê o ID do ambiente atual do provider — se mudar, o widget reconstrói
-    final currentEnvId = ref.watch(currentEnvironmentIdProvider);
-
+    // Visual 100% igual ao original
     return Scaffold(
       appBar: AppBar(
         title: const Text('Localização do Jogador'),
@@ -181,75 +175,6 @@ class _GameScreenState extends State<GameScreen> {
                   fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 30),
-
-            // Widget que reage ao ambiente detectado
-            _buildEnvironmentCard(currentEnvId),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Separa a construção do card em método próprio para deixar o build limpo.
-  Widget _buildEnvironmentCard(String? currentEnvId) {
-    // Caso fora de área (null): mostra mensagem de nenhum ambiente próximo
-    if (currentEnvId == null) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.grey.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey),
-        ),
-        child: const Text(
-          'Nenhum ambiente próximo.\nCaminha até um ponto do mapa!',
-          style: TextStyle(fontSize: 16, color: Colors.grey),
-          textAlign: TextAlign.center,
-        ),
-      );
-    }
-
-    // Caso dentro de um ambiente: mostra o nome com destaque
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.place, color: Colors.blue),
-          const SizedBox(height: 8),
-          Text(
-            '📍 Você está em:',
-            style: const TextStyle(fontSize: 14, color: Colors.blue),
-          ),
-          Text(
-            currentEnvId, // Aqui você pode trocar pelo nome, buscando na lista
-            style: const TextStyle(
-                fontSize: 18, fontWeight: FontWeight.w600),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.location_on, size: 50, color: Colors.blue),
-            const SizedBox(height: 20),
-            Text(
-              _locationMessage,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              _coords,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 30),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -259,7 +184,8 @@ class _GameScreenState extends State<GameScreen> {
               ),
               child: Text(
                 _currentEnvironment,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.w600),
                 textAlign: TextAlign.center,
               ),
             ),

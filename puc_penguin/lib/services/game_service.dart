@@ -11,7 +11,7 @@ class GameService {
   /// com base na lista salva no dispositivo.
   Future<List<Environment>> getEnvironmentsWithProgress() async {
     final unlockedIds = await _storageService.loadUnlockedEnvironments();
-    final all = MockEnvironmentRepository.allEnvironments;
+    final all = staticEnvironments; // lista completa de ambientes do jogo
 
     // Recria cada ambiente com o isUnlocked correto
     return all.map((env) {
