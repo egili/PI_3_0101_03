@@ -52,7 +52,31 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         },
       );
     } catch (e) {
+<<<<<<< Salvar
       setState(() => _locationMessage = e.toString());
+=======
+      // 3. Tratar a recusa (atualiza o texto da tela para não ficar carregando infinitamente)
+      setState(() {
+        _locationMessage = 'Permissão de localização negada.';
+      });
+
+      // 4. Exibir a mensagem caso seja negado (mostra um pop-up pro usuário)
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text("Permissão Necessária"),
+            content: const Text("Você precisa aceitar a permissão de localização para o RPG funcionar."),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text("Entendi"),
+              ),
+            ],
+          );
+        },
+      );
+>>>>>>> develop
     }
   }
 
