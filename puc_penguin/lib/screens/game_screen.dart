@@ -52,9 +52,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         },
       );
     } catch (e) {
-<<<<<<< Salvar
+
       setState(() => _locationMessage = e.toString());
-=======
+
       // 3. Tratar a recusa (atualiza o texto da tela para não ficar carregando infinitamente)
       setState(() {
         _locationMessage = 'Permissão de localização negada.';
@@ -76,7 +76,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           );
         },
       );
->>>>>>> develop
     }
   }
 
