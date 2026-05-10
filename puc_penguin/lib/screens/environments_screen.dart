@@ -66,28 +66,9 @@ class _EnvironmentCard extends StatelessWidget {
     required this.isUnlocked,
   });
 
-  // Cor placeholder de cada ambiente — trocar por imagem depois
-  Color get _placeholderColor {
-    switch (environment.id) {
-      case 'h15':        return Colors.indigo.shade700;
-      case 'biblioteca': return Colors.teal.shade700;
-      case 'hospital':   return Colors.red.shade700;
-      case 'oficina':    return Colors.orange.shade700;
-      case 'mercadao':   return Colors.green.shade700;
-      default:           return Colors.blueGrey.shade700;
-    }
-  }
-
-  // Ícone placeholder de cada ambiente
-  IconData get _placeholderIcon {
-    switch (environment.id) {
-      case 'h15':        return Icons.science;
-      case 'biblioteca': return Icons.menu_book;
-      case 'hospital':   return Icons.local_hospital;
-      case 'oficina':    return Icons.build;
-      case 'mercadao':   return Icons.restaurant;
-      default:           return Icons.place;
-    }
+  // Caminho da imagem baseado no ID do ambiente
+  String get _imagePath {
+    return 'assets/images/environments/${environment.id}.png';
   }
 
   @override
@@ -131,16 +112,17 @@ class _EnvironmentCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // ── Imagem / Placeholder ──────────────────────
-              // Quando tiver imagem, substitua este Container por:
-              // Image.asset('assets/images/${environment.id}.png', fit: BoxFit.cover)
-              Container(
-                color: _placeholderColor,
-                child: Icon(
-                  _placeholderIcon,
-                  size: 80,
-                  color: Colors.white.withOpacity(0.3),
-                ),
+              // ── Imagem do Ambiente ──────────────────────
+              Image.asset(
+                _imagePath,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  // Fallback caso a imagem não exista
+                  return Container(
+                    color: Colors.blueGrey.shade700,
+                    child: Icon(Icons.image_not_supported, size: 80, color: Colors.white30),
+                  );
+                },
               ),
 
               // ── Overlay escuro para bloqueados ────────────
