@@ -93,16 +93,27 @@ class _EnvironmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: isUnlocked
-          ? () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => EnvironmentDetailScreen(
-                    environment: environment,
-                  ),
-                ),
-              )
-          : null, // bloqueado = não clicável
+      onTap: () {
+        if (isUnlocked) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => EnvironmentDetailScreen(
+                environment: environment,
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Este ambiente está bloqueado. Visite o local para desbloqueá-lo!'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.black87,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
         decoration: BoxDecoration(
@@ -264,7 +275,7 @@ class _EnvironmentCard extends StatelessWidget {
 // TELA DE DETALHE DO AMBIENTE
 // ─────────────────────────────────────────────────────────
 
-class EnvironmentDetailScreen extends StatelessWidget {
+class EnvironmentDetailScreen extends ConsumerWidget {
   final Environment environment;
 
   const EnvironmentDetailScreen({super.key, required this.environment});
@@ -325,7 +336,22 @@ class EnvironmentDetailScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unlockedIds = ref.watch(unlockedEnvironmentsProvider);
+    final isUnlocked = unlockedIds.contains(environment.id);
+
+    if (!isUnlocked) {
+      Future.microtask(() {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Este ambiente ainda está bloqueado!'),
+            backgroundColor: Colors.red.shade800,
+          ),
+        );
+        Navigator.of(context).pop();
+      });
+    }
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [

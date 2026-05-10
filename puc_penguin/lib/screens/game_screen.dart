@@ -128,7 +128,30 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       if (!unlocked.contains(environment.id)) {
         unlocked.add(environment.id);
         ref.read(unlockedEnvironmentsProvider.notifier).state = unlocked;
+
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.lock_open, color: Colors.green),
+                  SizedBox(width: 10),
+                  Text('Novo Ambiente!'),
+                ],
+              ),
+              content: Text('Parabéns! Você acabou de desbloquear o acesso ao ambiente: ${environment.name}!'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Incrível!'),
+                ),
+              ],
+            ),
+          );
+        }
       }
+
     } catch (e) {
       debugPrint('Firebase não configurado: $e');
     }
