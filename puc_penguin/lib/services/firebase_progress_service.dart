@@ -92,7 +92,7 @@ class FirebaseProgressService {
     }
   }
 
-  // Lógica para validação de acesso conforme RF03
+  /// Lógica para validação de acesso conforme RF03
   Future<bool> canAccessEnvironment(String environmentId) async {
     try {
       if (environmentId == 'h15') return true;
@@ -128,27 +128,18 @@ class FirebaseProgressService {
     }
   }
 
-  // RF09: Liberar ambientes após requisito narrativo ser cumprido
+  /// RF09: Liberar ambientes após requisito narrativo ser cumprido
   Future<void> completeMission(String missionId, String nextEnvId) async {
     try {
-      // Marca missão como concluída
+      // Usando Firestore para manter a consistência da classe
       await _firestore.collection(_collection).doc(_uid).set(
         {
           'missoesConcluidas': FieldValue.arrayUnion([missionId]),
-          'ultimoSalvamento': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
-      
-      // Libera o próximo ambiente conforme o fluxo do roteiro
-      await _firestore.collection(_collection).doc(_uid).set(
-        {
           'unlockedEnvironments': FieldValue.arrayUnion([nextEnvId]),
           'ultimoSalvamento': FieldValue.serverTimestamp(),
         },
         SetOptions(merge: true),
       );
-      
       debugPrint('🎯 Missão $missionId finalizada e $nextEnvId liberado.');
     } catch (e) {
       debugPrint('❌ Erro no fluxo de missão/desbloqueio: $e');

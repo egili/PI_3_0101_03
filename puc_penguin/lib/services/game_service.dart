@@ -1,22 +1,21 @@
 import '../constants/environments.dart';
 import '../models/environment.dart';
 import 'storage_service.dart';
-import 'location_service.dart'; // Importação necessária para o RF01/RF02
-import 'firebase_progress_service.dart'; // Para persistência em tempo real
+import 'location_service.dart'; 
+import 'firebase_progress_service.dart'; 
 
 /// Serviço com as regras de negócio do jogo.
-/// Ele gerencia o Sistema de Desbloqueio e a validação de acesso.
+/// Gerencia o Sistema de Desbloqueio e a validação de acesso.
 class GameService {
   final StorageService _storageService = StorageService();
   final LocationService _locationService = LocationService();
   final FirebaseProgressService _firebaseService; 
-  final dynamic _uiService; // Interface para feedbacks visuais
+  final dynamic _uiService; 
 
-  // Construtor
   GameService(this._firebaseService, this._uiService);
 
   /// 1. DEFINIR REGRAS DE DESBLOQUEIO
-  /// Mapeamento oficial do roteiro: Missão concluída libera o próximo ID de ambiente.
+  /// Mapeamento oficial: Missão concluída libera o próximo ID de ambiente.
   final Map<String, String> _regrasProgresso = {
     'm1_bibliotecario': 'biblioteca',
     'm3_enfermeira': 'manacas',
@@ -25,7 +24,6 @@ class GameService {
   };
 
   /// Retorna todos os ambientes, marcando quais estão desbloqueados
-  /// com base na lista salva no dispositivo ou Firebase.
   Future<List<Environment>> getEnvironmentsWithProgress() async {
     final unlockedIds = await _storageService.loadUnlockedEnvironments();
     final all = staticEnvironments; 
@@ -36,12 +34,12 @@ class GameService {
     }).toList();
   }
 
-  /// 2. IMPLEMENTAR VALIDAÇÃO DE ACESSO
-  /// 3. BLOQUEAR AMBIENTES NÃO LIBERADOS
-  /// Valida se o jogador pode interagir com o ambiente (Status + GPS).
+  /// 2. IMPLEMENTAR VALIDAÇÃO DE ACESSO / 3. BLOQUEAR AMBIENTES
   Future<bool> validarAcessoAmbiente(Environment env, dynamic userPos) async {
-    // RF03: Bloqueio por regra de negócio (isUnlocked)
-    if (!env.isUnlocked) {
+    // RF03: Bloqueio por regra de negócio (isUnlocked) no Firebase
+    bool liberado = await _firebaseService.canAccessEnvironment(env.id);
+    
+    if (!liberado) {
       _uiService.showError("Este local ainda está inacessível. Progrida na história!");
       return false;
     }
@@ -53,68 +51,62 @@ class GameService {
       return false;
     }
 
-    return true; // Acesso permitido
+    return true; 
   }
 
   /// 4. LIBERAR AMBIENTES APÓS MISSÃO
-  /// Atualiza o status da missão e desbloqueia o próximo ambiente no fluxo.
-  Future<void> concluirMissao(String missionId) async {
-    // Salva conclusão da missão no Firebase e Local
-    await _firebaseService.saveMissionProgress(missionId, true);
+  /// Atualiza o status e desbloqueia o próximo ambiente no fluxo.
+  Future<void> finalizarMissaoETrajeto(String missionId, String deviceId) async {
+    // Salva conclusão da missão no Firebase
+    await _firebaseService.concluirMissao(deviceId: deviceId, missaoId: missionId);
     
     // Verifica se esta missão libera um ambiente específico
     String? ambienteParaDesbloquear = _regrasProgresso[missionId];
 
     if (ambienteParaDesbloquear != null) {
-      await unlockEnvironment(ambienteParaDesbloquear);
+      // Chama a sua função completeMission para liberar o próximo passo
+      await _firebaseService.completeMission(missionId, ambienteParaDesbloquear);
+      await unlockEnvironment(ambienteParaDesbloquear, deviceId);
       
-      // Feedback visual em Azul Corporativo para o usuário
       _uiService.showSuccess("Novo ambiente desbloqueado no seu mapa!");
     }
   }
 
   /// Desbloqueia um novo ambiente e garante a persistência (RF04/RF08).
-  Future<bool> unlockEnvironment(String environmentId) async {
+  Future<bool> unlockEnvironment(String environmentId, String deviceId) async {
     final unlocked = await _storageService.loadUnlockedEnvironments();
 
     if (unlocked.contains(environmentId)) return false;
 
-    // Atualiza Local e Firebase simultaneamente
     unlocked.add(environmentId);
     await _storageService.saveUnlockedEnvironments(unlocked);
-    await _firebaseService.unlockEnvironment(environmentId);
+    
+    // Sincroniza com sua função desbloquearAmbiente no Firebase
+    await _firebaseService.desbloquearAmbiente(deviceId: deviceId, environmentId: environmentId);
     
     return true; 
   }
 
   /// 5. TESTAR FLUXO DE PROGRESSÃO
-  /// Método para validação durante o desenvolvimento.
-  void testarFluxoCompleto() async {
+  void testarFluxoCompleto(String deviceId) async {
     print("Iniciando Teste de Progressão...");
-    // Simula conclusão da missão inicial
-    await concluirMissao('m1_bibliotecario');
-    
-    bool biblioStatus = await isEnvironmentUnlocked('biblioteca');
-    print("Teste - Biblioteca Desbloqueada: $biblioStatus");
+    await finalizarMissaoETrajeto('m1_bibliotecario', deviceId);
+    bool status = await _firebaseService.canAccessEnvironment('biblioteca');
+    print("Teste - Biblioteca Desbloqueada: $status");
   }
 
-  /// Verifica se um ambiente específico está desbloqueado.
   Future<bool> isEnvironmentUnlocked(String environmentId) async {
     final unlocked = await _storageService.loadUnlockedEnvironments();
     return unlocked.contains(environmentId);
   }
 
-  /// Lógica de interação com o ambiente (Unificação das validações).
-  void handleEnvironmentInteraction(Environment env, dynamic userPos) async {
+  void handleEnvironmentInteraction(Environment env, dynamic userPos, String deviceId) async {
     bool acessoPermitido = await validarAcessoAmbiente(env, userPos);
-
     if (acessoPermitido) {
-      // Inicia diálogo ou missão
       startNarrative(env.id);
     }
   }
 
-  /// Carrega o progresso completo do jogador ao iniciar o app.
   Future<Map<String, dynamic>?> loadGameProgress() async {
     final hasGame = await _storageService.hasSavedGame();
     if (!hasGame) return null;
@@ -126,18 +118,17 @@ class GameService {
     };
   }
 
-  /// Salva o progresso quando o jogador visita um ambiente.
   Future<void> saveVisit({
     required String playerName,
     required String gender,
     required String environmentId,
+    required String deviceId,
   }) async {
     await _storageService.savePlayerName(playerName);
     await _storageService.savePlayerGender(gender);
-    await unlockEnvironment(environmentId);
+    await unlockEnvironment(environmentId, deviceId);
   }
   
-  // Métodos auxiliares de navegação/UI
   void startNarrative(String envId) {
     print("Iniciando narrativa de $envId");
   }
