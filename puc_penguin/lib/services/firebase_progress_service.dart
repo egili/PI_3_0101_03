@@ -92,6 +92,24 @@ class FirebaseProgressService {
     }
   }
 
+  // Lógica para validação de acesso conforme RF03
+  Future<bool> canAccessEnvironment(String environmentId) async {
+    try {
+      if (environmentId == 'h15') return true;
+
+      final doc = await _firestore.collection(_collection).doc(_uid).get();
+      
+      if (doc.exists && doc.data() != null) {
+        List<dynamic> unlocked = doc.data()!['unlockedEnvironments'] ?? [];
+        return unlocked.contains(environmentId);
+      }
+      return false;
+    } catch (e) {
+      debugPrint('❌ Erro ao validar acesso ao ambiente: $e');
+      return false;
+    }
+  }
+
   Future<void> salvarEscolha({
     required String deviceId,
     required String perguntaId,
@@ -107,6 +125,33 @@ class FirebaseProgressService {
       );
     } catch (e) {
       debugPrint('❌ Erro ao salvar escolha: $e');
+    }
+  }
+
+  // RF09: Liberar ambientes após requisito narrativo ser cumprido
+  Future<void> completeMission(String missionId, String nextEnvId) async {
+    try {
+      // Marca missão como concluída
+      await _firestore.collection(_collection).doc(_uid).set(
+        {
+          'missoesConcluidas': FieldValue.arrayUnion([missionId]),
+          'ultimoSalvamento': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+      
+      // Libera o próximo ambiente conforme o fluxo do roteiro
+      await _firestore.collection(_collection).doc(_uid).set(
+        {
+          'unlockedEnvironments': FieldValue.arrayUnion([nextEnvId]),
+          'ultimoSalvamento': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+      
+      debugPrint('🎯 Missão $missionId finalizada e $nextEnvId liberado.');
+    } catch (e) {
+      debugPrint('❌ Erro no fluxo de missão/desbloqueio: $e');
     }
   }
 
@@ -131,7 +176,6 @@ class FirebaseProgressService {
   Future<bool> temProgressoSalvo(String deviceId) async {
     try {
       final doc = await _firestore.collection(_collection).doc(_uid).get();
-
       return doc.exists;
     } catch (e) {
       return false;
@@ -141,7 +185,6 @@ class FirebaseProgressService {
   Future<void> apagarProgresso(String deviceId) async {
     try {
       await _firestore.collection(_collection).doc(_uid).delete();
-
       debugPrint('🗑️ Progresso apagado para: $_uid');
     } catch (e) {
       debugPrint('❌ Erro ao apagar progresso: $e');
@@ -195,8 +238,6 @@ class GameProgress {
   }
 }
 
-/// Converte a String salva no banco de volta para o enum Gender.
-/// Uso: GenderHelper.fromString('male') → Gender.male
 class GenderHelper {
   static Gender fromString(String value) {
     return Gender.values.firstWhere(
