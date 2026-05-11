@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "951832019459",
-    "project_id": "pi-03-03",
-    "storage_bucket": "pi-03-03.firebasestorage.app"
+    "project_number": "228150015768",
+    "project_id": "pucpenguin",
+    "storage_bucket": "pucpenguin.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:951832019459:android:2ba9f1c95a196e15fb8436",
+        "mobilesdk_app_id": "1:228150015768:android:066302e02afccb8192106d",
         "android_client_info": {
           "package_name": "com.example.puc_penguin"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDR01ejwFcrF6lkAse125j2eSirYK_8w-o"
+          "current_key": "AIzaSyCfCLjZNWN9yneOvTUsuIoBmZ0q6O3-oOc"
         }
       ],
       "services": {
