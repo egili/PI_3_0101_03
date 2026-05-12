@@ -167,6 +167,7 @@ class FirebaseProgressService {
   Future<bool> temProgressoSalvo(String deviceId) async {
     try {
       final doc = await _firestore.collection(_collection).doc(_uid).get();
+
       return doc.exists;
     } catch (e) {
       return false;
@@ -176,6 +177,7 @@ class FirebaseProgressService {
   Future<void> apagarProgresso(String deviceId) async {
     try {
       await _firestore.collection(_collection).doc(_uid).delete();
+
       debugPrint('🗑️ Progresso apagado para: $_uid');
     } catch (e) {
       debugPrint('❌ Erro ao apagar progresso: $e');
