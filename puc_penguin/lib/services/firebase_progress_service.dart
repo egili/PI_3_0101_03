@@ -92,6 +92,24 @@ class FirebaseProgressService {
     }
   }
 
+  /// Lógica para validação de acesso conforme RF03
+  Future<bool> canAccessEnvironment(String environmentId) async {
+    try {
+      if (environmentId == 'h15') return true;
+
+      final doc = await _firestore.collection(_collection).doc(_uid).get();
+      
+      if (doc.exists && doc.data() != null) {
+        List<dynamic> unlocked = doc.data()!['unlockedEnvironments'] ?? [];
+        return unlocked.contains(environmentId);
+      }
+      return false;
+    } catch (e) {
+      debugPrint('❌ Erro ao validar acesso ao ambiente: $e');
+      return false;
+    }
+  }
+
   Future<void> salvarEscolha({
     required String deviceId,
     required String perguntaId,
@@ -107,6 +125,24 @@ class FirebaseProgressService {
       );
     } catch (e) {
       debugPrint('❌ Erro ao salvar escolha: $e');
+    }
+  }
+
+  /// RF09: Liberar ambientes após requisito narrativo ser cumprido
+  Future<void> completeMission(String missionId, String nextEnvId) async {
+    try {
+      // Usando Firestore para manter a consistência da classe
+      await _firestore.collection(_collection).doc(_uid).set(
+        {
+          'missoesConcluidas': FieldValue.arrayUnion([missionId]),
+          'unlockedEnvironments': FieldValue.arrayUnion([nextEnvId]),
+          'ultimoSalvamento': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+      debugPrint('🎯 Missão $missionId finalizada e $nextEnvId liberado.');
+    } catch (e) {
+      debugPrint('❌ Erro no fluxo de missão/desbloqueio: $e');
     }
   }
 
@@ -195,8 +231,6 @@ class GameProgress {
   }
 }
 
-/// Converte a String salva no banco de volta para o enum Gender.
-/// Uso: GenderHelper.fromString('male') → Gender.male
 class GenderHelper {
   static Gender fromString(String value) {
     return Gender.values.firstWhere(
