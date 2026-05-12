@@ -1,10 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../models/player.dart';
 
 class FirebaseProgressService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static const String _collection = 'jogadores';
+
+  String get _uid => FirebaseAuth.instance.currentUser!.uid;
 
   Future<void> salvarProgresso({
     required String deviceId,
@@ -16,7 +19,7 @@ class FirebaseProgressService {
     required Map<String, String> escolhas,
   }) async {
     try {
-      await _firestore.collection(_collection).doc(deviceId).set(
+      await _firestore.collection(_collection).doc(_uid).set(
         {
           'playerName': playerName,
           'gender': gender,
@@ -28,7 +31,8 @@ class FirebaseProgressService {
         },
         SetOptions(merge: true),
       );
-      debugPrint('✅ Progresso salvo no Firebase para: $deviceId');
+
+      debugPrint('✅ Progresso salvo no Firebase para: $_uid');
     } catch (e) {
       debugPrint('❌ Erro ao salvar progresso: $e');
       rethrow;
@@ -40,7 +44,7 @@ class FirebaseProgressService {
     required String? environmentId,
   }) async {
     try {
-      await _firestore.collection(_collection).doc(deviceId).set(
+      await _firestore.collection(_collection).doc(_uid).set(
         {
           'currentEnvironmentId': environmentId,
           'ultimoSalvamento': FieldValue.serverTimestamp(),
@@ -57,13 +61,14 @@ class FirebaseProgressService {
     required String environmentId,
   }) async {
     try {
-      await _firestore.collection(_collection).doc(deviceId).set(
+      await _firestore.collection(_collection).doc(_uid).set(
         {
           'unlockedEnvironments': FieldValue.arrayUnion([environmentId]),
           'ultimoSalvamento': FieldValue.serverTimestamp(),
         },
         SetOptions(merge: true),
       );
+
       debugPrint('🔓 Ambiente desbloqueado no Firebase: $environmentId');
     } catch (e) {
       debugPrint('❌ Erro ao desbloquear ambiente: $e');
@@ -75,7 +80,7 @@ class FirebaseProgressService {
     required String missaoId,
   }) async {
     try {
-      await _firestore.collection(_collection).doc(deviceId).set(
+      await _firestore.collection(_collection).doc(_uid).set(
         {
           'missoesConcluidas': FieldValue.arrayUnion([missaoId]),
           'ultimoSalvamento': FieldValue.serverTimestamp(),
@@ -93,7 +98,7 @@ class FirebaseProgressService {
     required String resposta,
   }) async {
     try {
-      await _firestore.collection(_collection).doc(deviceId).set(
+      await _firestore.collection(_collection).doc(_uid).set(
         {
           'escolhas.$perguntaId': resposta,
           'ultimoSalvamento': FieldValue.serverTimestamp(),
@@ -107,15 +112,15 @@ class FirebaseProgressService {
 
   Future<GameProgress?> carregarProgresso(String deviceId) async {
     try {
-      final doc =
-          await _firestore.collection(_collection).doc(deviceId).get();
+      final doc = await _firestore.collection(_collection).doc(_uid).get();
 
       if (!doc.exists || doc.data() == null) {
-        debugPrint('ℹ️ Nenhum progresso encontrado para: $deviceId');
+        debugPrint('ℹ️ Nenhum progresso encontrado para: $_uid');
         return null;
       }
 
-      debugPrint('✅ Progresso carregado do Firebase para: $deviceId');
+      debugPrint('✅ Progresso carregado do Firebase para: $_uid');
+
       return GameProgress.fromMap(doc.data()!);
     } catch (e) {
       debugPrint('❌ Erro ao carregar progresso: $e');
@@ -125,8 +130,8 @@ class FirebaseProgressService {
 
   Future<bool> temProgressoSalvo(String deviceId) async {
     try {
-      final doc =
-          await _firestore.collection(_collection).doc(deviceId).get();
+      final doc = await _firestore.collection(_collection).doc(_uid).get();
+
       return doc.exists;
     } catch (e) {
       return false;
@@ -135,14 +140,14 @@ class FirebaseProgressService {
 
   Future<void> apagarProgresso(String deviceId) async {
     try {
-      await _firestore.collection(_collection).doc(deviceId).delete();
-      debugPrint('🗑️ Progresso apagado para: $deviceId');
+      await _firestore.collection(_collection).doc(_uid).delete();
+
+      debugPrint('🗑️ Progresso apagado para: $_uid');
     } catch (e) {
       debugPrint('❌ Erro ao apagar progresso: $e');
     }
   }
 }
-
 
 class GameProgress {
   final String playerName;
