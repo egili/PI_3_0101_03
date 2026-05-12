@@ -66,43 +66,35 @@ class _EnvironmentCard extends StatelessWidget {
     required this.isUnlocked,
   });
 
-  // Cor placeholder de cada ambiente — trocar por imagem depois
-  Color get _placeholderColor {
-    switch (environment.id) {
-      case 'h15':        return Colors.indigo.shade700;
-      case 'biblioteca': return Colors.teal.shade700;
-      case 'hospital':   return Colors.red.shade700;
-      case 'oficina':    return Colors.orange.shade700;
-      case 'mercadao':   return Colors.green.shade700;
-      default:           return Colors.blueGrey.shade700;
-    }
-  }
-
-  // Ícone placeholder de cada ambiente
-  IconData get _placeholderIcon {
-    switch (environment.id) {
-      case 'h15':        return Icons.science;
-      case 'biblioteca': return Icons.menu_book;
-      case 'hospital':   return Icons.local_hospital;
-      case 'oficina':    return Icons.build;
-      case 'mercadao':   return Icons.restaurant;
-      default:           return Icons.place;
-    }
+  // Caminho da imagem baseado no ID do ambiente
+  String get _imagePath {
+    return 'assets/images/environments/${environment.id}.png';
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: isUnlocked
-          ? () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => EnvironmentDetailScreen(
-                    environment: environment,
-                  ),
-                ),
-              )
-          : null, // bloqueado = não clicável
+      onTap: () {
+        if (isUnlocked) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => EnvironmentDetailScreen(
+                environment: environment,
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Este ambiente está bloqueado. Visite o local para desbloqueá-lo!'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.black87,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
         decoration: BoxDecoration(
@@ -120,16 +112,17 @@ class _EnvironmentCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // ── Imagem / Placeholder ──────────────────────
-              // Quando tiver imagem, substitua este Container por:
-              // Image.asset('assets/images/${environment.id}.png', fit: BoxFit.cover)
-              Container(
-                color: _placeholderColor,
-                child: Icon(
-                  _placeholderIcon,
-                  size: 80,
-                  color: Colors.white.withOpacity(0.3),
-                ),
+              // ── Imagem do Ambiente ──────────────────────
+              Image.asset(
+                _imagePath,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  // Fallback caso a imagem não exista
+                  return Container(
+                    color: Colors.blueGrey.shade700,
+                    child: Icon(Icons.image_not_supported, size: 80, color: Colors.white30),
+                  );
+                },
               ),
 
               // ── Overlay escuro para bloqueados ────────────
@@ -264,7 +257,7 @@ class _EnvironmentCard extends StatelessWidget {
 // TELA DE DETALHE DO AMBIENTE
 // ─────────────────────────────────────────────────────────
 
-class EnvironmentDetailScreen extends StatelessWidget {
+class EnvironmentDetailScreen extends ConsumerWidget {
   final Environment environment;
 
   const EnvironmentDetailScreen({super.key, required this.environment});
@@ -325,7 +318,22 @@ class EnvironmentDetailScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unlockedIds = ref.watch(unlockedEnvironmentsProvider);
+    final isUnlocked = unlockedIds.contains(environment.id);
+
+    if (!isUnlocked) {
+      Future.microtask(() {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Este ambiente ainda está bloqueado!'),
+            backgroundColor: Colors.red.shade800,
+          ),
+        );
+        Navigator.of(context).pop();
+      });
+    }
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [

@@ -7,7 +7,7 @@ import '../models/environment.dart';
 class EnvironmentNotifier extends StateNotifier<Environment?> {
   EnvironmentNotifier() : super(null);
 
-  void updateLocation(Position position) {
+  void updateLocation(Position position, WidgetRef ref) {
     for (var env in staticEnvironments) {
       double distance = Geolocator.distanceBetween(
         position.latitude,
@@ -18,6 +18,11 @@ class EnvironmentNotifier extends StateNotifier<Environment?> {
 
       if (distance <= env.radius) {
         state = env;
+
+        // Auto-unlock logic
+        final progressSaver = ref.read(progressSaverProvider.notifier);
+        progressSaver.salvarDesbloqueio(env.id);
+
         return;
       }
     }
