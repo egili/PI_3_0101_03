@@ -117,7 +117,6 @@ class _EnvironmentCard extends StatelessWidget {
                 _imagePath,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
-                  // Fallback caso a imagem não exista
                   return Container(
                     color: Colors.blueGrey.shade700,
                     child: Icon(Icons.image_not_supported, size: 80, color: Colors.white30),
@@ -284,7 +283,6 @@ class EnvironmentDetailScreen extends ConsumerWidget {
     }
   }
 
-  // O que tem em cada ambiente
   String get _whatToFind {
     switch (environment.id) {
       case 'h15':
@@ -342,24 +340,39 @@ class EnvironmentDetailScreen extends ConsumerWidget {
             expandedHeight: 280,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
               title: Text(
                 environment.name,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black,
+                      blurRadius: 8,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
                 ),
               ),
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Placeholder — substitua por Image.asset quando tiver imagem
-                  Container(
-                    color: _placeholderColor,
-                    child: Icon(
-                      _placeholderIcon,
-                      size: 100,
-                      color: Colors.white.withOpacity(0.3),
-                    ),
+                  // ✅ Tenta carregar a imagem, usa placeholder se não existir
+                  Image.asset(
+                    'assets/images/environments/${environment.id}.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: _placeholderColor,
+                        child: Icon(
+                          _placeholderIcon,
+                          size: 100,
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+                      );
+                    },
                   ),
                   // Gradiente para o título ficar legível
                   Container(

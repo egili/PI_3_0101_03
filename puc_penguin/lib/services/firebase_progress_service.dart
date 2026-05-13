@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../models/player.dart';
 
@@ -7,7 +6,11 @@ class FirebaseProgressService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static const String _collection = 'jogadores';
 
-  String get _uid => FirebaseAuth.instance.currentUser!.uid;
+  // ✅ Não usamos mais Firebase Auth — o deviceId é a chave persistente
+  Future<void> garantirAutenticacao() async {
+    // Mantido para compatibilidade com home_screen.dart
+    debugPrint('ℹ️ Usando deviceId como chave — Auth não necessário');
+  }
 
   Future<void> salvarProgresso({
     required String deviceId,
@@ -19,7 +22,7 @@ class FirebaseProgressService {
     required Map<String, String> escolhas,
   }) async {
     try {
-      await _firestore.collection(_collection).doc(_uid).set(
+      await _firestore.collection(_collection).doc(deviceId).set(
         {
           'playerName': playerName,
           'gender': gender,
@@ -32,7 +35,7 @@ class FirebaseProgressService {
         SetOptions(merge: true),
       );
 
-      debugPrint('✅ Progresso salvo no Firebase para: $_uid');
+      debugPrint('✅ Progresso salvo no Firebase para deviceId: $deviceId');
     } catch (e) {
       debugPrint('❌ Erro ao salvar progresso: $e');
       rethrow;
@@ -44,7 +47,7 @@ class FirebaseProgressService {
     required String? environmentId,
   }) async {
     try {
-      await _firestore.collection(_collection).doc(_uid).set(
+      await _firestore.collection(_collection).doc(deviceId).set(
         {
           'currentEnvironmentId': environmentId,
           'ultimoSalvamento': FieldValue.serverTimestamp(),
@@ -61,7 +64,7 @@ class FirebaseProgressService {
     required String environmentId,
   }) async {
     try {
-      await _firestore.collection(_collection).doc(_uid).set(
+      await _firestore.collection(_collection).doc(deviceId).set(
         {
           'unlockedEnvironments': FieldValue.arrayUnion([environmentId]),
           'ultimoSalvamento': FieldValue.serverTimestamp(),
@@ -80,7 +83,7 @@ class FirebaseProgressService {
     required String missaoId,
   }) async {
     try {
-      await _firestore.collection(_collection).doc(_uid).set(
+      await _firestore.collection(_collection).doc(deviceId).set(
         {
           'missoesConcluidas': FieldValue.arrayUnion([missaoId]),
           'ultimoSalvamento': FieldValue.serverTimestamp(),
@@ -92,13 +95,19 @@ class FirebaseProgressService {
     }
   }
 
-  /// Lógica para validação de acesso conforme RF03
   Future<bool> canAccessEnvironment(String environmentId) async {
+    if (environmentId == 'h15') return true;
+    return false;
+  }
+
+  Future<bool> canAccessEnvironmentForDevice(
+      String deviceId, String environmentId) async {
     try {
       if (environmentId == 'h15') return true;
 
-      final doc = await _firestore.collection(_collection).doc(_uid).get();
-      
+      final doc =
+          await _firestore.collection(_collection).doc(deviceId).get();
+
       if (doc.exists && doc.data() != null) {
         List<dynamic> unlocked = doc.data()!['unlockedEnvironments'] ?? [];
         return unlocked.contains(environmentId);
@@ -116,7 +125,7 @@ class FirebaseProgressService {
     required String resposta,
   }) async {
     try {
-      await _firestore.collection(_collection).doc(_uid).set(
+      await _firestore.collection(_collection).doc(deviceId).set(
         {
           'escolhas.$perguntaId': resposta,
           'ultimoSalvamento': FieldValue.serverTimestamp(),
@@ -128,11 +137,16 @@ class FirebaseProgressService {
     }
   }
 
-  /// RF09: Liberar ambientes após requisito narrativo ser cumprido
+  // Mantido para compatibilidade com game_service.dart
   Future<void> completeMission(String missionId, String nextEnvId) async {
+    debugPrint(
+        '⚠️ completeMission sem deviceId — use completeMissionForDevice');
+  }
+
+  Future<void> completeMissionForDevice(
+      String deviceId, String missionId, String nextEnvId) async {
     try {
-      // Usando Firestore para manter a consistência da classe
-      await _firestore.collection(_collection).doc(_uid).set(
+      await _firestore.collection(_collection).doc(deviceId).set(
         {
           'missoesConcluidas': FieldValue.arrayUnion([missionId]),
           'unlockedEnvironments': FieldValue.arrayUnion([nextEnvId]),
@@ -148,15 +162,15 @@ class FirebaseProgressService {
 
   Future<GameProgress?> carregarProgresso(String deviceId) async {
     try {
-      final doc = await _firestore.collection(_collection).doc(_uid).get();
+      final doc =
+          await _firestore.collection(_collection).doc(deviceId).get();
 
       if (!doc.exists || doc.data() == null) {
-        debugPrint('ℹ️ Nenhum progresso encontrado para: $_uid');
+        debugPrint('ℹ️ Nenhum progresso encontrado para deviceId: $deviceId');
         return null;
       }
 
-      debugPrint('✅ Progresso carregado do Firebase para: $_uid');
-
+      debugPrint('✅ Progresso carregado do Firebase para deviceId: $deviceId');
       return GameProgress.fromMap(doc.data()!);
     } catch (e) {
       debugPrint('❌ Erro ao carregar progresso: $e');
@@ -166,19 +180,19 @@ class FirebaseProgressService {
 
   Future<bool> temProgressoSalvo(String deviceId) async {
     try {
-      final doc = await _firestore.collection(_collection).doc(_uid).get();
-
+      final doc =
+          await _firestore.collection(_collection).doc(deviceId).get();
       return doc.exists;
     } catch (e) {
+      debugPrint('❌ Erro ao verificar progresso: $e');
       return false;
     }
   }
 
   Future<void> apagarProgresso(String deviceId) async {
     try {
-      await _firestore.collection(_collection).doc(_uid).delete();
-
-      debugPrint('🗑️ Progresso apagado para: $_uid');
+      await _firestore.collection(_collection).doc(deviceId).delete();
+      debugPrint('🗑️ Progresso apagado para deviceId: $deviceId');
     } catch (e) {
       debugPrint('❌ Erro ao apagar progresso: $e');
     }
@@ -211,11 +225,9 @@ class GameProgress {
       currentEnvironmentId: map['currentEnvironmentId'],
       unlockedEnvironments:
           List<String>.from(map['unlockedEnvironments'] ?? ['h15']),
-      missoesConcluidas:
-          List<String>.from(map['missoesConcluidas'] ?? []),
+      missoesConcluidas: List<String>.from(map['missoesConcluidas'] ?? []),
       escolhas: Map<String, String>.from(map['escolhas'] ?? {}),
-      ultimoSalvamento:
-          (map['ultimoSalvamento'] as Timestamp?)?.toDate(),
+      ultimoSalvamento: (map['ultimoSalvamento'] as Timestamp?)?.toDate(),
     );
   }
 

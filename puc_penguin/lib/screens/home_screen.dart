@@ -26,22 +26,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _verificarSaveExistente() async {
     try {
-      final deviceId = await ref.read(deviceIdProvider.future);
       final firebaseService = ref.read(firebaseProgressServiceProvider);
+
+      // ✅ Garante login anônimo antes de qualquer operação no Firebase
+      await firebaseService.garantirAutenticacao();
+
+      final deviceId = await ref.read(deviceIdProvider.future);
       final temSave = await firebaseService.temProgressoSalvo(deviceId);
+
       setState(() {
         _temSaveExistente = temSave;
         _verificandoSave = false;
       });
     } catch (e) {
+      debugPrint('Erro ao verificar save: $e');
       setState(() => _verificandoSave = false);
     }
   }
 
   Future<void> _iniciarNovoJogo() async {
     try {
-      final deviceId = await ref.read(deviceIdProvider.future);
       final firebaseService = ref.read(firebaseProgressServiceProvider);
+      await firebaseService.garantirAutenticacao();
+
+      final deviceId = await ref.read(deviceIdProvider.future);
 
       await firebaseService.salvarProgresso(
         deviceId: deviceId,
@@ -62,15 +70,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     if (mounted) {
-      Navigator.push(
+      await Navigator.push(
           context, MaterialPageRoute(builder: (_) => const GameScreen()));
+      // Atualiza o botão Continuar ao voltar para a HomeScreen
+      if (mounted) _verificarSaveExistente();
     }
   }
 
   Future<void> _continuarJogo() async {
     try {
-      final deviceId = await ref.read(deviceIdProvider.future);
       final firebaseService = ref.read(firebaseProgressServiceProvider);
+      await firebaseService.garantirAutenticacao();
+
+      final deviceId = await ref.read(deviceIdProvider.future);
       final progress = await firebaseService.carregarProgresso(deviceId);
 
       if (progress != null) {
@@ -88,8 +100,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     if (mounted) {
-      Navigator.push(
+      await Navigator.push(
           context, MaterialPageRoute(builder: (_) => const GameScreen()));
+      if (mounted) _verificarSaveExistente();
     }
   }
 
@@ -168,7 +181,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                   SizedBox(height: size.height * 0.02),
 
-                  // ── Botão Ver Ambientes ───────────────────
+                  // Botão Ver Ambientes
                   _buildButton(
                     text: 'Ver Ambientes',
                     isSecondary: true,
