@@ -6,7 +6,9 @@ import '../services/location_service.dart';
 import '../constants/environments.dart';
 import '../models/environment.dart';
 import '../providers/game_provider.dart';
+import '../providers/mission_provider.dart';
 import 'environments_screen.dart';
+import 'missions_screen.dart';
 import 'dart:async';
 
 class GameScreen extends ConsumerStatefulWidget {
@@ -42,8 +44,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       Position position = await _locationService.getCurrentLocation();
       _updateLocationUI(position);
 
-      _positionStreamSubscription =
-          _locationService.getPositionStream().listen(
+      _positionStreamSubscription = _locationService.getPositionStream().listen(
         (Position position) => _updateLocationUI(position),
         onError: (error) {
           setState(() {
@@ -52,21 +53,16 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         },
       );
     } catch (e) {
+      setState(() => _locationMessage = 'Permissão de localização negada.');
 
-      setState(() => _locationMessage = e.toString());
-
-      // 3. Tratar a recusa (atualiza o texto da tela para não ficar carregando infinitamente)
-      setState(() {
-        _locationMessage = 'Permissão de localização negada.';
-      });
-
-      // 4. Exibir a mensagem caso seja negado (mostra um pop-up pro usuário)
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: const Text("Permissão Necessária"),
-            content: const Text("Você precisa aceitar a permissão de localização para o RPG funcionar."),
+            content: const Text(
+              "Você precisa aceitar a permissão de localização para o RPG funcionar.",
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -94,6 +90,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       _lastEnvironmentId = environment.id;
       _vibrate();
       await _salvarAmbienteNoFirebase(environment);
+
+      // NOVO: atualiza a missão ativa ao entrar em um ambiente
+      ref.read(missionProvider.notifier).atualizarMissaoAtiva(environment.id);
     } else if (environment == null) {
       _lastEnvironmentId = null;
     }
@@ -139,7 +138,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   Text('Novo Ambiente!'),
                 ],
               ),
-              content: Text('Parabéns! Você acabou de desbloquear o acesso ao ambiente: ${environment.name}!'),
+              content: Text(
+                'Parabéns! Você acabou de desbloquear o acesso ao ambiente: ${environment.name}!',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
@@ -150,7 +151,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           );
         }
       }
-
     } catch (e) {
       debugPrint('Firebase não configurado: $e');
     }
@@ -166,13 +166,17 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       final currentEnvId = ref.read(currentEnvironmentIdProvider);
       final unlocked = ref.read(unlockedEnvironmentsProvider);
 
+      // CORREÇÃO: lê as missões antes de salvar para não sobrescrever
+      final progressAtual = await firebaseService.carregarProgresso(deviceId);
+      final missoesConcluidas = progressAtual?.missoesConcluidas ?? [];
+
       await firebaseService.salvarProgresso(
         deviceId: deviceId,
         playerName: player?.name ?? 'Jogador',
         gender: player?.gender.name ?? 'male',
         currentEnvironmentId: currentEnvId,
         unlockedEnvironments: unlocked,
-        missoesConcluidas: const [],
+        missoesConcluidas: missoesConcluidas, // antes era const []
         escolhas: const {},
       );
 
@@ -229,7 +233,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               ),
               const SizedBox(height: 24),
 
-              // ── Salvar Jogo ───────────────────────────────
+              // Salvar Jogo
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -244,7 +248,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
                       : const Icon(Icons.save),
                   label: Text(_salvando ? 'Salvando...' : 'Salvar Jogo'),
@@ -260,7 +266,32 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               ),
               const SizedBox(height: 12),
 
-              // ── Ver Ambientes ─────────────────────────────
+              // NOVO: botão Missões
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MissionsScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.assignment),
+                  label: const Text('Missões'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple.shade600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Ver Ambientes
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -269,7 +300,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => const EnvironmentsScreen()),
+                        builder: (_) => const EnvironmentsScreen(),
+                      ),
                     );
                   },
                   icon: const Icon(Icons.explore),
@@ -295,7 +327,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   Environment? _checkActiveEnvironment(double lat, double lon) {
     for (var env in staticEnvironments) {
       double distance = Geolocator.distanceBetween(
-          lat, lon, env.latitude, env.longitude);
+        lat,
+        lon,
+        env.latitude,
+        env.longitude,
+      );
       if (distance <= env.radius) return env;
     }
     return null;
@@ -315,6 +351,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // NOVO: observa a missão ativa para o HUD
+    final missaoAtiva = ref.watch(missaoAtivaProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Localização do Jogador'),
@@ -340,8 +379,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             const SizedBox(height: 10),
             Text(
               _coords,
-              style: const TextStyle(
-                  fontSize: 20, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 30),
             Container(
@@ -354,12 +392,78 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               child: Text(
                 _currentEnvironment,
                 style: const TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.w600),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
+
+            // NOVO: HUD com a missão ativa
+            if (missaoAtiva != null) ...[
+              const SizedBox(height: 20),
+              _MissaoAtivaHUD(titulo: missaoAtiva.titulo),
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// HUD DE MISSÃO ATIVA
+// ─────────────────────────────────────────────
+
+class _MissaoAtivaHUD extends StatelessWidget {
+  final String titulo;
+
+  const _MissaoAtivaHUD({required this.titulo});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A2340),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF4A90E2), width: 1.5),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.assignment_turned_in,
+            color: Color(0xFF4A90E2),
+            size: 22,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'MISSÃO ATIVA',
+                  style: TextStyle(
+                    color: Color(0xFF4A90E2),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  titulo,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
