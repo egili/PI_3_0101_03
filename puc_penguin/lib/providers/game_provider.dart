@@ -7,19 +7,47 @@ import '../services/firebase_progress_service.dart';
 import '../services/device_id_service.dart';
 
 // ─────────────────────────────────────────────
+// NOTIFIERS (substitutos do StateProvider no Riverpod 3.x)
+// ─────────────────────────────────────────────
+
+class PlayerNotifier extends Notifier<Player?> {
+  @override
+  Player? build() => null;
+}
+
+class CurrentEnvironmentIdNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+}
+
+class UnlockedEnvironmentsNotifier extends Notifier<List<String>> {
+  @override
+  List<String> build() => ['h15'];
+}
+
+// ─────────────────────────────────────────────
 // PROVIDERS SIMPLES
 // ─────────────────────────────────────────────
 
-final playerProvider = StateProvider<Player?>((ref) => null);
-final currentEnvironmentIdProvider = StateProvider<String?>((ref) => null);
+final playerProvider =
+    NotifierProvider<PlayerNotifier, Player?>(PlayerNotifier.new);
+
+final currentEnvironmentIdProvider =
+    NotifierProvider<CurrentEnvironmentIdNotifier, String?>(
+        CurrentEnvironmentIdNotifier.new);
+
 final unlockedEnvironmentsProvider =
-    StateProvider<List<String>>((ref) => ['h15']);
+    NotifierProvider<UnlockedEnvironmentsNotifier, List<String>>(
+        UnlockedEnvironmentsNotifier.new);
 
 // ─────────────────────────────────────────────
 // PROVIDERS DE SERVIÇO
 // ─────────────────────────────────────────────
 
-final gameServiceProvider = Provider<GameService>((ref) => GameService());
+final gameServiceProvider = Provider<GameService>((ref) {
+  final firebaseService = ref.read(firebaseProgressServiceProvider);
+  return GameService(firebaseService, null);
+});
 final storageServiceProvider =
     Provider<StorageService>((ref) => StorageService());
 final firebaseProgressServiceProvider =
@@ -29,14 +57,10 @@ final firebaseProgressServiceProvider =
 // PROVIDER DO DEVICE ID
 // ─────────────────────────────────────────────
 
-/// Carrega o ID único do dispositivo de forma assíncrona.
-/// Usado como chave no Firestore.
 final deviceIdProvider = FutureProvider<String>((ref) async {
   return DeviceIdService.getDeviceId();
 });
 
-/// Carrega o progresso do jogador do Firebase ao iniciar o app.
-/// Retorna null se for a primeira vez (jogador novo).
 final gameProgressProvider = FutureProvider<GameProgress?>((ref) async {
   final deviceId = await ref.watch(deviceIdProvider.future);
   final firebaseService = ref.read(firebaseProgressServiceProvider);
@@ -44,7 +68,6 @@ final gameProgressProvider = FutureProvider<GameProgress?>((ref) async {
   final progress = await firebaseService.carregarProgresso(deviceId);
 
   if (progress != null) {
-    // Restaura o estado global com os dados carregados do banco
     ref.read(unlockedEnvironmentsProvider.notifier).state =
         progress.unlockedEnvironments;
     ref.read(currentEnvironmentIdProvider.notifier).state =
@@ -75,12 +98,14 @@ final currentEnvironmentProvider = Provider<Environment?>((ref) {
   );
 });
 
+// ─────────────────────────────────────────────
+// PROGRESS SAVER
+// ─────────────────────────────────────────────
 
 class ProgressSaverNotifier extends AsyncNotifier<void> {
   @override
   Future<void> build() async {}
 
-  /// Salva todo o progresso atual do jogador.
   Future<void> salvarTudo() async {
     final deviceId = await ref.read(deviceIdProvider.future);
     final firebaseService = ref.read(firebaseProgressServiceProvider);
@@ -104,7 +129,6 @@ class ProgressSaverNotifier extends AsyncNotifier<void> {
     });
   }
 
-  /// Salva o desbloqueio de um ambiente e atualiza o estado local.
   Future<void> salvarDesbloqueio(String environmentId) async {
     final deviceId = await ref.read(deviceIdProvider.future);
     final firebaseService = ref.read(firebaseProgressServiceProvider);
