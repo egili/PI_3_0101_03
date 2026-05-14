@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'game_screen.dart';
 import 'environments_screen.dart';
+import 'missions_screen.dart';
 import '../utils/constants.dart';
 import '../providers/game_provider.dart';
+import '../providers/mission_provider.dart';
 import '../services/firebase_progress_service.dart';
 import '../models/player.dart';
 
@@ -27,8 +29,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _verificarSaveExistente() async {
     try {
       final firebaseService = ref.read(firebaseProgressServiceProvider);
-
-      // ✅ Garante login anônimo antes de qualquer operação no Firebase
       await firebaseService.garantirAutenticacao();
 
       final deviceId = await ref.read(deviceIdProvider.future);
@@ -65,14 +65,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         name: 'Jogador',
         gender: Gender.male,
       );
+
+      // Reseta missões para novo jogo
+      await ref.read(missionProvider.notifier).recarregar();
     } catch (e) {
       debugPrint('Firebase não configurado ainda: $e');
     }
 
     if (mounted) {
       await Navigator.push(
-          context, MaterialPageRoute(builder: (_) => const GameScreen()));
-      // Atualiza o botão Continuar ao voltar para a HomeScreen
+        context,
+        MaterialPageRoute(builder: (_) => const GameScreen()),
+      );
       if (mounted) _verificarSaveExistente();
     }
   }
@@ -94,6 +98,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           name: progress.playerName,
           gender: GenderHelper.fromString(progress.gender),
         );
+
+        // NOVO: restaura missões com o progresso salvo
+        await ref.read(missionProvider.notifier).recarregar();
+
+        // Marca missão ativa com base no ambiente em que o jogador estava
+        if (progress.currentEnvironmentId != null) {
+          ref
+              .read(missionProvider.notifier)
+              .atualizarMissaoAtiva(progress.currentEnvironmentId!);
+        }
       }
     } catch (e) {
       debugPrint('Erro ao carregar progresso: $e');
@@ -101,7 +115,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (mounted) {
       await Navigator.push(
-          context, MaterialPageRoute(builder: (_) => const GameScreen()));
+        context,
+        MaterialPageRoute(builder: (_) => const GameScreen()),
+      );
       if (mounted) _verificarSaveExistente();
     }
   }
@@ -110,6 +126,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const EnvironmentsScreen()),
+    );
+  }
+
+  void _verMissoes() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MissionsScreen()),
     );
   }
 
@@ -156,14 +179,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
               Column(
                 children: [
-                  // Botão Novo Jogo
                   _buildButton(
                     text: AppText.startGame,
                     onPressed: _iniciarNovoJogo,
                   ),
                   SizedBox(height: size.height * 0.02),
 
-                  // Botão Continuar
                   _verificandoSave
                       ? const CircularProgressIndicator()
                       : _buildButton(
@@ -174,19 +195,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               : () {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                        content: Text(AppText.noSave)),
+                                      content: Text(AppText.noSave),
+                                    ),
                                   );
                                 },
                           disabled: !_temSaveExistente,
                         ),
                   SizedBox(height: size.height * 0.02),
 
-                  // Botão Ver Ambientes
                   _buildButton(
                     text: 'Ver Ambientes',
                     isSecondary: true,
                     onPressed: _verAmbientes,
                     icon: Icons.explore,
+                  ),
+
+                  SizedBox(height: size.height * 0.02),
+
+                  _buildButton(
+                    text: 'Ver Missões',
+                    isSecondary: true,
+                    onPressed: _verMissoes,
+                    icon: Icons.assignment,
                   ),
                 ],
               ),
@@ -224,8 +254,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           backgroundColor: disabled
               ? Colors.grey.shade300
               : isSecondary
-                  ? AppColors.buttonSecondary
-                  : AppColors.buttonPrimary,
+              ? AppColors.buttonSecondary
+              : AppColors.buttonPrimary,
           foregroundColor: isSecondary ? AppColors.textPrimary : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSizes.borderRadius),

@@ -7,7 +7,7 @@ import '../services/firebase_progress_service.dart';
 import '../services/device_id_service.dart';
 
 // ─────────────────────────────────────────────
-// NOTIFIERS (substitutos do StateProvider no Riverpod 3.x)
+// NOTIFIERS
 // ─────────────────────────────────────────────
 
 class PlayerNotifier extends Notifier<Player?> {
@@ -29,16 +29,19 @@ class UnlockedEnvironmentsNotifier extends Notifier<List<String>> {
 // PROVIDERS SIMPLES
 // ─────────────────────────────────────────────
 
-final playerProvider =
-    NotifierProvider<PlayerNotifier, Player?>(PlayerNotifier.new);
+final playerProvider = NotifierProvider<PlayerNotifier, Player?>(
+  PlayerNotifier.new,
+);
 
 final currentEnvironmentIdProvider =
     NotifierProvider<CurrentEnvironmentIdNotifier, String?>(
-        CurrentEnvironmentIdNotifier.new);
+      CurrentEnvironmentIdNotifier.new,
+    );
 
 final unlockedEnvironmentsProvider =
     NotifierProvider<UnlockedEnvironmentsNotifier, List<String>>(
-        UnlockedEnvironmentsNotifier.new);
+      UnlockedEnvironmentsNotifier.new,
+    );
 
 // ─────────────────────────────────────────────
 // PROVIDERS DE SERVIÇO
@@ -48,13 +51,17 @@ final gameServiceProvider = Provider<GameService>((ref) {
   final firebaseService = ref.read(firebaseProgressServiceProvider);
   return GameService(firebaseService, null);
 });
-final storageServiceProvider =
-    Provider<StorageService>((ref) => StorageService());
-final firebaseProgressServiceProvider =
-    Provider<FirebaseProgressService>((ref) => FirebaseProgressService());
+
+final storageServiceProvider = Provider<StorageService>(
+  (ref) => StorageService(),
+);
+
+final firebaseProgressServiceProvider = Provider<FirebaseProgressService>(
+  (ref) => FirebaseProgressService(),
+);
 
 // ─────────────────────────────────────────────
-// PROVIDER DO DEVICE ID
+// DEVICE ID
 // ─────────────────────────────────────────────
 
 final deviceIdProvider = FutureProvider<String>((ref) async {
@@ -115,6 +122,10 @@ class ProgressSaverNotifier extends AsyncNotifier<void> {
 
     if (player == null) return;
 
+    // CORREÇÃO: lê as missões salvas antes de sobrescrever o documento
+    final progressAtual = await firebaseService.carregarProgresso(deviceId);
+    final missoesConcluidas = progressAtual?.missoesConcluidas ?? [];
+
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       await firebaseService.salvarProgresso(
@@ -123,7 +134,7 @@ class ProgressSaverNotifier extends AsyncNotifier<void> {
         gender: player.gender.name,
         currentEnvironmentId: currentEnvId,
         unlockedEnvironments: unlocked,
-        missoesConcluidas: const [],
+        missoesConcluidas: missoesConcluidas, // antes era const [] — bug
         escolhas: const {},
       );
     });
@@ -148,5 +159,5 @@ class ProgressSaverNotifier extends AsyncNotifier<void> {
 
 final progressSaverProvider =
     AsyncNotifierProvider<ProgressSaverNotifier, void>(
-  ProgressSaverNotifier.new,
-);
+      ProgressSaverNotifier.new,
+    );
