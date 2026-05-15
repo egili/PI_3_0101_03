@@ -1,0 +1,39 @@
+name: puc_penguin
+description: "A new Flutter project."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  geolocator: ^14.0.2
+  permission_handler: ^12.0.1
+  flutter_riverpod: ^3.3.1
+  shared_preferences: ^2.2.2
+  firebase_core: ^4.8.0
+  cloud_firestore: ^6.4.0
+  firebase_auth: ^6.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/icon.png"
+  min_sdk_android: 21
+
+flutter:
+  uses-material-design: true
+  assets:
+  - assets/logo.png
+  - assets/icon/icon.png
+  - assets/images/environments/
