@@ -18,7 +18,7 @@ final List<Environment> staticEnvironments = [
     latitude: -22.833900994731703,
     longitude: -47.05184828539257,
     radius: 15.0,
-    audioAsset: 'assets/audio/library_theme.mp3',
+    audioAsset: 'assets/audio/dojoteca_theme.mp3',
     isUnlocked: false,
   ),
   Environment(
