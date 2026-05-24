@@ -44,7 +44,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await ref.read(playerProvider.notifier).setPlayer(player);
 
     if (mounted) {
-      Navigator.pushReplacementNamed(context, '/');
+      Navigator.pushReplacementNamed(context, '/tutorial');
     }
   }
 

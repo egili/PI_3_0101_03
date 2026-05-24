@@ -8,6 +8,7 @@ import 'screens/home_screen.dart';
 import 'screens/game_screen.dart';
 import 'screens/map_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/tutorial_screen.dart';
 import 'services/auth_service.dart';
 import 'services/storage_service.dart';
 
@@ -47,6 +48,7 @@ class MyApp extends StatelessWidget {
       home: const RootScreen(),
       routes: {
         '/onboarding': (context) => const OnboardingScreen(),
+        '/tutorial': (context) => const TutorialScreen(),
         '/': (context) => const HomeScreen(),
         '/game': (context) => const GameScreen(),
         '/map': (context) => const MapScreen(),
