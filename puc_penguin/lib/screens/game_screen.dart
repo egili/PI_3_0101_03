@@ -34,6 +34,30 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   String? _lastEnvironmentId;
   bool _salvando = false;
 
+  //Integrar Background
+  String _getBackgroundImage() {
+    switch (_lastEnvironmentId) {
+      case 'h15':
+        return 'assets/backgrounds/h15.png';
+
+      case 'biblioteca':
+        return 'assets/backgrounds/biblioteca.png';
+
+      case 'hospital':
+        return 'assets/backgrounds/hospital.png';
+
+      case 'oficina':
+        return 'assets/backgrounds/oficina.png';
+
+      case 'mercadao':
+        return 'assets/backgrounds/mercadao.png';
+
+      default:
+        return 'assets/backgrounds/default.png';
+    }
+  }
+  //
+
   @override
   void initState() {
     super.initState();
@@ -370,8 +394,11 @@ Widget build(BuildContext context) {
     body: Stack(
       children: [
         // FUNDO
-        Container(
-          color: const Color(0xFF87CEEB),
+        Positioned.fill(
+          child: Image.asset(
+            _getBackgroundImage(),
+            fit: BoxFit.cover,
+          ),
         ),
 
         // NPC H15
