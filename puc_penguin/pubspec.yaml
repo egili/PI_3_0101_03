@@ -39,6 +39,4 @@ flutter:
   - assets/images/environments/
   - assets/player/
   - assets/player/idle/
-  - assets/player/walk/
   - assets/npcs/
-  - assets/ui/
