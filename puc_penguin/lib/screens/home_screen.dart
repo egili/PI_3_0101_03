@@ -50,21 +50,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       await firebaseService.garantirAutenticacao();
 
       final deviceId = await ref.read(deviceIdProvider.future);
+      final player = ref.read(playerProvider);
+
+      String finalName = 'Jogador';
+      Gender finalGender = Gender.male;
+
+      if (player != null) {
+        finalName = player.name;
+        finalGender = player.gender;
+      }
 
       await firebaseService.salvarProgresso(
         deviceId: deviceId,
-        playerName: 'Jogador',
-        gender: 'male',
+        playerName: finalName,
+        gender: finalGender.name,
         currentEnvironmentId: null,
         unlockedEnvironments: ['h15'],
         missoesConcluidas: [],
         escolhas: {},
       );
 
-      ref.read(playerProvider.notifier).state = Player(
-        name: 'Jogador',
-        gender: Gender.male,
-      );
+      if (player == null) {
+        ref.read(playerProvider.notifier).setPlayer(Player(
+          name: finalName,
+          gender: finalGender,
+        ));
+      }
 
       // Reseta missões para novo jogo
       await ref.read(missionProvider.notifier).recarregar();
@@ -94,10 +105,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             progress.unlockedEnvironments;
         ref.read(currentEnvironmentIdProvider.notifier).state =
             progress.currentEnvironmentId;
-        ref.read(playerProvider.notifier).state = Player(
+
+        ref.read(playerProvider.notifier).setPlayer(Player(
           name: progress.playerName,
           gender: GenderHelper.fromString(progress.gender),
-        );
+        ));
 
         // NOVO: restaura missões com o progresso salvo
         await ref.read(missionProvider.notifier).recarregar();

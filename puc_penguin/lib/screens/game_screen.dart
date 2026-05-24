@@ -356,7 +356,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Localização do Jogador'),
+        title: Text('Localização de ${ref.watch(playerProvider)?.name ?? 'Jogador'}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.more_vert),
