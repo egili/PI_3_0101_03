@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/player.dart';
+import '../providers/player_provider.dart';
 import '../models/environment.dart';
 import '../services/game_service.dart';
 import '../services/storage_service.dart';
@@ -9,11 +9,6 @@ import '../services/device_id_service.dart';
 // ─────────────────────────────────────────────
 // NOTIFIERS
 // ─────────────────────────────────────────────
-
-class PlayerNotifier extends Notifier<Player?> {
-  @override
-  Player? build() => null;
-}
 
 class CurrentEnvironmentIdNotifier extends Notifier<String?> {
   @override
@@ -28,10 +23,6 @@ class UnlockedEnvironmentsNotifier extends Notifier<List<String>> {
 // ─────────────────────────────────────────────
 // PROVIDERS SIMPLES
 // ─────────────────────────────────────────────
-
-final playerProvider = NotifierProvider<PlayerNotifier, Player?>(
-  PlayerNotifier.new,
-);
 
 final currentEnvironmentIdProvider =
     NotifierProvider<CurrentEnvironmentIdNotifier, String?>(

@@ -7,7 +7,10 @@ import 'firebase_options.dart';
 import 'screens/home_screen.dart';
 import 'screens/game_screen.dart';
 import 'screens/map_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'screens/tutorial_screen.dart';
 import 'services/auth_service.dart';
+import 'services/storage_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,16 +45,37 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         useMaterial3: true,
       ),
-      initialRoute: '/',
+      home: const RootScreen(),
       routes: {
-        '/onboarding': (context) => const Scaffold(
-              body: Center(
-                child: Text('Onboarding em desenvolvimento'),
-              ),
-            ),
+        '/onboarding': (context) => const OnboardingScreen(),
+        '/tutorial': (context) => const TutorialScreen(),
         '/': (context) => const HomeScreen(),
         '/game': (context) => const GameScreen(),
         '/map': (context) => const MapScreen(),
+      },
+    );
+  }
+}
+
+class RootScreen extends StatelessWidget {
+  const RootScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: StorageService().hasSavedGame(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.data == true) {
+          return const HomeScreen();
+        }
+
+        return const OnboardingScreen();
       },
     );
   }

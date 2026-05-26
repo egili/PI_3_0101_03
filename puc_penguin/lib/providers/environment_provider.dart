@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import '../constants/environments.dart';
 import '../models/environment.dart';
+import '../services/audio_service.dart';
 
 class EnvironmentNotifier extends StateNotifier<Environment?> {
   EnvironmentNotifier() : super(null);
@@ -17,16 +18,21 @@ class EnvironmentNotifier extends StateNotifier<Environment?> {
       );
 
       if (distance <= env.radius) {
-        state = env;
+        if (state?.id != env.id) {
+          state = env;
+          AudioService().playMusic(env.audioAsset);
 
-        // Auto-unlock logic
-        final progressSaver = ref.read(progressSaverProvider.notifier);
-        progressSaver.salvarDesbloqueio(env.id);
-
+          // Auto-unlock logic
+          final progressSaver = ref.read(progressSaverProvider.notifier);
+          progressSaver.salvarDesbloqueio(env.id);
+        }
         return;
       }
     }
-    state = null; // Fora de qualquer área
+    if (state != null) {
+      state = null; // Fora de qualquer área
+      AudioService().stopMusic();
+    }
   }
 }
 
