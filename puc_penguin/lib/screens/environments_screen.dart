@@ -4,6 +4,17 @@ import '../constants/environments.dart';
 import '../models/environment.dart';
 import '../providers/game_provider.dart';
 
+// ── Paleta temática PUC Penguin ───────────────────────────────────────────
+class _PenguinColors {
+  static const Color iceBlue = Color(0xFF3BBFFF);
+  static const Color deepBlue = Color(0xFF054C94);
+  static const Color yellowMain = Color(0xFFFFC107);
+  static const Color yellowDark = Color(0xFFE59000);
+  static const Color snowWhite = Color(0xFFECF6FF);
+  static const Color bgDark = Color(0xFF0A2A5E);
+  static const Color bgMid = Color(0xFF1A4E7A);
+}
+
 class EnvironmentsScreen extends ConsumerWidget {
   const EnvironmentsScreen({super.key});
 
@@ -12,26 +23,74 @@ class EnvironmentsScreen extends ConsumerWidget {
     final unlockedIds = ref.watch(unlockedEnvironmentsProvider);
 
     return Scaffold(
+      backgroundColor: _PenguinColors.bgDark,
       appBar: AppBar(
-        title: const Text('Ambientes'),
+        backgroundColor: _PenguinColors.deepBlue,
         centerTitle: true,
+        elevation: 0,
+        title: const Text(
+          'Ambientes',
+          style: TextStyle(
+            color: _PenguinColors.snowWhite,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: _PenguinColors.snowWhite),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Contador de progresso
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Text(
-              '${unlockedIds.length} de ${staticEnvironments.length} desbloqueados',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 13,
-              ),
+          // ── Contador de progresso ──────────────────────────────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            decoration: const BoxDecoration(
+              color: _PenguinColors.deepBlue,
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Progresso',
+                      style: TextStyle(
+                        color: _PenguinColors.iceBlue,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      '${unlockedIds.length} / ${staticEnvironments.length} desbloqueados',
+                      style: const TextStyle(
+                        color: _PenguinColors.snowWhite,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: staticEnvironments.isEmpty
+                        ? 0
+                        : unlockedIds.length / staticEnvironments.length,
+                    minHeight: 8,
+                    backgroundColor: Colors.white24,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      _PenguinColors.yellowMain,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
-          // Carrossel de ambientes
+          // ── Carrossel de ambientes ─────────────────────────────────────
           Expanded(
             child: PageView.builder(
               padEnds: false,
@@ -40,7 +99,6 @@ class EnvironmentsScreen extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final env = staticEnvironments[index];
                 final isUnlocked = unlockedIds.contains(env.id);
-
                 return _EnvironmentCard(
                   environment: env,
                   isUnlocked: isUnlocked,
@@ -56,20 +114,17 @@ class EnvironmentsScreen extends ConsumerWidget {
   }
 }
 
-/// Card individual do carrossel
+// ─────────────────────────────────────────────────────────
+// CARD DO CARROSSEL
+// ─────────────────────────────────────────────────────────
+
 class _EnvironmentCard extends StatelessWidget {
   final Environment environment;
   final bool isUnlocked;
 
-  const _EnvironmentCard({
-    required this.environment,
-    required this.isUnlocked,
-  });
+  const _EnvironmentCard({required this.environment, required this.isUnlocked});
 
-  // Caminho da imagem baseado no ID do ambiente
-  String get _imagePath {
-    return 'assets/images/environments/${environment.id}.png';
-  }
+  String get _imagePath => 'assets/images/environments/${environment.id}.png';
 
   @override
   Widget build(BuildContext context) {
@@ -79,18 +134,25 @@ class _EnvironmentCard extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => EnvironmentDetailScreen(
-                environment: environment,
-              ),
+              builder: (_) => EnvironmentDetailScreen(environment: environment),
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Este ambiente está bloqueado. Visite o local para desbloqueá-lo!'),
+              content: const Text(
+                'Este ambiente está bloqueado. Visite o local para desbloqueá-lo!',
+                style: TextStyle(
+                  color: _PenguinColors.deepBlue,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               behavior: SnackBarBehavior.floating,
-              backgroundColor: Colors.black87,
+              backgroundColor: _PenguinColors.yellowMain,
               duration: const Duration(seconds: 3),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           );
         }
@@ -99,10 +161,18 @@ class _EnvironmentCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isUnlocked
+                ? _PenguinColors.iceBlue.withOpacity(0.6)
+                : Colors.white12,
+            width: 1.5,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 10,
+              color: isUnlocked
+                  ? _PenguinColors.iceBlue.withOpacity(0.15)
+                  : Colors.black.withOpacity(0.3),
+              blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
@@ -112,25 +182,24 @@ class _EnvironmentCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // ── Imagem do Ambiente ──────────────────────
+              // ── Imagem ────────────────────────────────────
               Image.asset(
                 _imagePath,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.blueGrey.shade700,
-                    child: Icon(Icons.image_not_supported, size: 80, color: Colors.white30),
-                  );
-                },
+                errorBuilder: (_, __, ___) => Container(
+                  color: _PenguinColors.bgMid,
+                  child: const Icon(
+                    Icons.image_not_supported,
+                    size: 80,
+                    color: Colors.white30,
+                  ),
+                ),
               ),
 
-              // ── Overlay escuro para bloqueados ────────────
-              if (!isUnlocked)
-                Container(
-                  color: Colors.black.withOpacity(0.65),
-                ),
+              // ── Overlay bloqueado ─────────────────────────
+              if (!isUnlocked) Container(color: Colors.black.withOpacity(0.70)),
 
-              // ── Gradiente inferior (desbloqueados) ────────
+              // ── Gradiente inferior (desbloqueado) ─────────
               if (isUnlocked)
                 Positioned(
                   bottom: 0,
@@ -143,7 +212,7 @@ class _EnvironmentCard extends StatelessWidget {
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
                         colors: [
-                          Colors.black.withOpacity(0.85),
+                          _PenguinColors.bgDark.withOpacity(0.92),
                           Colors.transparent,
                         ],
                       ),
@@ -151,7 +220,7 @@ class _EnvironmentCard extends StatelessWidget {
                   ),
                 ),
 
-              // ── Conteúdo do card ──────────────────────────
+              // ── Conteúdo ──────────────────────────────────
               Positioned(
                 bottom: 0,
                 left: 0,
@@ -170,7 +239,6 @@ class _EnvironmentCard extends StatelessWidget {
     );
   }
 
-  /// Conteúdo para ambiente desbloqueado
   Widget _buildUnlockedContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,7 +246,7 @@ class _EnvironmentCard extends StatelessWidget {
         Text(
           environment.name,
           style: const TextStyle(
-            color: Colors.white,
+            color: _PenguinColors.snowWhite,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -187,7 +255,7 @@ class _EnvironmentCard extends StatelessWidget {
         Text(
           environment.description,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
+            color: _PenguinColors.snowWhite.withOpacity(0.75),
             fontSize: 13,
             height: 1.4,
           ),
@@ -195,42 +263,43 @@ class _EnvironmentCard extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
+        // Botão "Ver detalhes" — estilo amarelo temático
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            color: _PenguinColors.yellowMain,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: _PenguinColors.yellowDark, width: 1.5),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Ver detalhes',
+                style: TextStyle(
+                  color: _PenguinColors.deepBlue,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              child: const Row(
-                children: [
-                  Text(
-                    'Ver detalhes',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(width: 4),
-                  Icon(Icons.arrow_forward, size: 14, color: Colors.black),
-                ],
+              SizedBox(width: 4),
+              Icon(
+                Icons.arrow_forward,
+                size: 14,
+                color: _PenguinColors.deepBlue,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
   }
 
-  /// Conteúdo para ambiente bloqueado — só preview mínima
   Widget _buildLockedContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Icon(Icons.lock, color: Colors.white54, size: 36),
+        const Icon(Icons.lock, color: _PenguinColors.iceBlue, size: 36),
         const SizedBox(height: 8),
         Text(
           environment.name,
@@ -244,7 +313,7 @@ class _EnvironmentCard extends StatelessWidget {
         const SizedBox(height: 4),
         const Text(
           'Visite este local para desbloquear',
-          style: TextStyle(color: Colors.white38, fontSize: 12),
+          style: TextStyle(color: _PenguinColors.iceBlue, fontSize: 12),
           textAlign: TextAlign.center,
         ),
       ],
@@ -263,23 +332,35 @@ class EnvironmentDetailScreen extends ConsumerWidget {
 
   Color get _placeholderColor {
     switch (environment.id) {
-      case 'h15':        return Colors.indigo.shade700;
-      case 'biblioteca': return Colors.teal.shade700;
-      case 'hospital':   return Colors.red.shade700;
-      case 'oficina':    return Colors.orange.shade700;
-      case 'mercadao':   return Colors.green.shade700;
-      default:           return Colors.blueGrey.shade700;
+      case 'h15':
+        return _PenguinColors.bgMid;
+      case 'biblioteca':
+        return const Color(0xFF0D3A3A);
+      case 'hospital':
+        return const Color(0xFF3A0D0D);
+      case 'oficina':
+        return const Color(0xFF3A2A0D);
+      case 'mercadao':
+        return const Color(0xFF0D3A1A);
+      default:
+        return _PenguinColors.bgDark;
     }
   }
 
   IconData get _placeholderIcon {
     switch (environment.id) {
-      case 'h15':        return Icons.science;
-      case 'biblioteca': return Icons.menu_book;
-      case 'hospital':   return Icons.local_hospital;
-      case 'oficina':    return Icons.build;
-      case 'mercadao':   return Icons.restaurant;
-      default:           return Icons.place;
+      case 'h15':
+        return Icons.science;
+      case 'biblioteca':
+        return Icons.menu_book;
+      case 'hospital':
+        return Icons.local_hospital;
+      case 'oficina':
+        return Icons.build;
+      case 'mercadao':
+        return Icons.restaurant;
+      default:
+        return Icons.place;
     }
   }
 
@@ -324,8 +405,14 @@ class EnvironmentDetailScreen extends ConsumerWidget {
       Future.microtask(() {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Este ambiente ainda está bloqueado!'),
-            backgroundColor: Colors.red.shade800,
+            content: const Text(
+              'Este ambiente ainda está bloqueado!',
+              style: TextStyle(
+                color: _PenguinColors.deepBlue,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            backgroundColor: _PenguinColors.yellowMain,
           ),
         );
         Navigator.of(context).pop();
@@ -333,12 +420,15 @@ class EnvironmentDetailScreen extends ConsumerWidget {
     }
 
     return Scaffold(
+      backgroundColor: _PenguinColors.bgDark,
       body: CustomScrollView(
         slivers: [
-          // ── Imagem grande no topo ─────────────────────────
+          // ── SliverAppBar com imagem ────────────────────────
           SliverAppBar(
             expandedHeight: 280,
             pinned: true,
+            backgroundColor: _PenguinColors.deepBlue,
+            iconTheme: const IconThemeData(color: _PenguinColors.snowWhite),
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
               title: Text(
@@ -346,7 +436,7 @@ class EnvironmentDetailScreen extends ConsumerWidget {
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: _PenguinColors.snowWhite,
                   shadows: [
                     Shadow(
                       color: Colors.black,
@@ -359,22 +449,18 @@ class EnvironmentDetailScreen extends ConsumerWidget {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // ✅ Tenta carregar a imagem, usa placeholder se não existir
                   Image.asset(
                     'assets/images/environments/${environment.id}.png',
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: _placeholderColor,
-                        child: Icon(
-                          _placeholderIcon,
-                          size: 100,
-                          color: Colors.white.withOpacity(0.3),
-                        ),
-                      );
-                    },
+                    errorBuilder: (_, __, ___) => Container(
+                      color: _placeholderColor,
+                      child: Icon(
+                        _placeholderIcon,
+                        size: 100,
+                        color: _PenguinColors.iceBlue.withOpacity(0.3),
+                      ),
+                    ),
                   ),
-                  // Gradiente para o título ficar legível
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -382,7 +468,7 @@ class EnvironmentDetailScreen extends ConsumerWidget {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.7),
+                          _PenguinColors.bgDark.withOpacity(0.85),
                         ],
                       ),
                     ),
@@ -402,20 +488,30 @@ class EnvironmentDetailScreen extends ConsumerWidget {
                   // Badge desbloqueado
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 4),
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.15),
+                      color: Colors.greenAccent.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.green),
+                      border: Border.all(color: Colors.greenAccent, width: 1.2),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.lock_open, color: Colors.green, size: 14),
+                        Icon(
+                          Icons.lock_open,
+                          color: Colors.greenAccent,
+                          size: 14,
+                        ),
                         SizedBox(width: 4),
-                        Text('Desbloqueado',
-                            style: TextStyle(
-                                color: Colors.green, fontSize: 12)),
+                        Text(
+                          'Desbloqueado',
+                          style: TextStyle(
+                            color: Colors.greenAccent,
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -425,14 +521,17 @@ class EnvironmentDetailScreen extends ConsumerWidget {
                   const Text(
                     'Descrição',
                     style: TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: _PenguinColors.snowWhite,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     environment.description,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
-                      color: Colors.grey.shade700,
+                      color: Colors.white70,
                       height: 1.6,
                     ),
                   ),
@@ -442,14 +541,17 @@ class EnvironmentDetailScreen extends ConsumerWidget {
                   const Text(
                     'O que você encontrará',
                     style: TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: _PenguinColors.snowWhite,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     _whatToFind,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
-                      color: Colors.grey.shade700,
+                      color: Colors.white70,
                       height: 1.8,
                     ),
                   ),
