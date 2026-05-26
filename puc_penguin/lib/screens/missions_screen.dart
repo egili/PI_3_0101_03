@@ -3,6 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/mission.dart';
 import '../providers/mission_provider.dart';
 
+// ── Paleta temática PUC Penguin ───────────────────────────────────────────
+class _PenguinColors {
+  static const Color iceBlue = Color(0xFF3BBFFF);
+  static const Color deepBlue = Color(0xFF054C94);
+  static const Color yellowMain = Color(0xFFFFC107);
+  static const Color yellowDark = Color(0xFFE59000);
+  static const Color snowWhite = Color(0xFFECF6FF);
+  static const Color bgDark = Color(0xFF0A2A5E);
+  static const Color bgMid = Color(0xFF1A4E7A);
+}
+
 class MissionsScreen extends ConsumerWidget {
   const MissionsScreen({super.key});
 
@@ -13,33 +24,50 @@ class MissionsScreen extends ConsumerWidget {
     final total = missionsAsync.value?.length ?? 0;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: _PenguinColors.bgDark,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF054C94),
+        backgroundColor: _PenguinColors.deepBlue,
         title: const Text(
           'Missões',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: _PenguinColors.snowWhite,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: _PenguinColors.snowWhite),
+        elevation: 0,
       ),
       body: missionsAsync.when(
         loading: () => const Center(
-          child: CircularProgressIndicator(color: Color(0xFF054C94)),
+          child: CircularProgressIndicator(color: _PenguinColors.iceBlue),
         ),
         error: (e, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+              const Icon(
+                Icons.error_outline,
+                color: _PenguinColors.yellowMain,
+                size: 48,
+              ),
               const SizedBox(height: 12),
               const Text(
                 'Erro ao carregar missões',
-                style: TextStyle(color: Colors.white70, fontSize: 16),
+                style: TextStyle(color: _PenguinColors.snowWhite, fontSize: 16),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () =>
                     ref.read(missionProvider.notifier).recarregar(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _PenguinColors.yellowMain,
+                  foregroundColor: _PenguinColors.deepBlue,
+                  textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 child: const Text('Tentar novamente'),
               ),
             ],
@@ -81,7 +109,7 @@ class _ProgressHeader extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       decoration: const BoxDecoration(
-        color: Color(0xFF054C94),
+        color: _PenguinColors.deepBlue,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
       child: Column(
@@ -92,12 +120,12 @@ class _ProgressHeader extends StatelessWidget {
             children: [
               const Text(
                 'Progresso',
-                style: TextStyle(color: Colors.white70, fontSize: 13),
+                style: TextStyle(color: _PenguinColors.iceBlue, fontSize: 13),
               ),
               Text(
                 '$concluidas / $total missões',
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: _PenguinColors.snowWhite,
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
                 ),
@@ -112,7 +140,7 @@ class _ProgressHeader extends StatelessWidget {
               minHeight: 8,
               backgroundColor: Colors.white24,
               valueColor: const AlwaysStoppedAnimation<Color>(
-                Colors.greenAccent,
+                _PenguinColors.yellowMain,
               ),
             ),
           ),
@@ -139,7 +167,8 @@ class _MissionCard extends ConsumerWidget {
 
     switch (mission.status) {
       case MissionStatus.concluida:
-        cardColor = const Color(0xFF1A2F1A);
+        // Verde gelo — concluída
+        cardColor = const Color(0xFF0D3320);
         borderColor = Colors.greenAccent;
         leadingIcon = const Icon(
           Icons.check_circle,
@@ -148,16 +177,18 @@ class _MissionCard extends ConsumerWidget {
         );
         break;
       case MissionStatus.ativa:
-        cardColor = const Color(0xFF1A2340);
-        borderColor = Color(0xFF4A90E2);
+        // Azul gelo — ativa
+        cardColor = const Color(0xFF0D2A4E);
+        borderColor = _PenguinColors.iceBlue;
         leadingIcon = const Icon(
           Icons.radio_button_checked,
-          color: Color(0xFF4A90E2),
+          color: _PenguinColors.iceBlue,
           size: 28,
         );
         break;
       case MissionStatus.pendente:
-        cardColor = const Color(0xFF1C1C2E);
+        // Azul escuro apagado — pendente
+        cardColor = _PenguinColors.bgMid;
         borderColor = Colors.white12;
         leadingIcon = const Icon(
           Icons.radio_button_unchecked,
@@ -193,7 +224,7 @@ class _MissionCard extends ConsumerWidget {
                           style: TextStyle(
                             color: mission.isPendente
                                 ? Colors.white38
-                                : Colors.white,
+                                : _PenguinColors.snowWhite,
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
                             decoration: mission.isConcluida
@@ -203,6 +234,7 @@ class _MissionCard extends ConsumerWidget {
                           ),
                         ),
                       ),
+                      // Badge ATIVA — amarelo temático
                       if (mission.isAtiva)
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -210,14 +242,13 @@ class _MissionCard extends ConsumerWidget {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF4A90E2),
+                            color: _PenguinColors.yellowMain,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFF4A90E2)),
                           ),
                           child: const Text(
                             'ATIVA',
                             style: TextStyle(
-                              color: Color(0xFF4A90E2),
+                              color: _PenguinColors.deepBlue,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1,
@@ -237,7 +268,7 @@ class _MissionCard extends ConsumerWidget {
                     ),
                   ),
 
-                  // Missão ATIVA: botão de concluir
+                  // Missão ATIVA: botão amarelo primário
                   if (mission.isAtiva) ...[
                     const SizedBox(height: 12),
                     SizedBox(
@@ -247,11 +278,16 @@ class _MissionCard extends ConsumerWidget {
                         icon: const Icon(Icons.check, size: 18),
                         label: const Text('Marcar como concluída'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.shade700,
-                          foregroundColor: Colors.white,
+                          backgroundColor: _PenguinColors.yellowMain,
+                          foregroundColor: _PenguinColors.deepBlue,
+                          elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
+                            side: const BorderSide(
+                              color: _PenguinColors.yellowDark,
+                              width: 1.5,
+                            ),
                           ),
                           textStyle: const TextStyle(
                             fontWeight: FontWeight.bold,
@@ -262,7 +298,7 @@ class _MissionCard extends ConsumerWidget {
                     ),
                   ],
 
-                  // Missão PENDENTE: botão para ativar manualmente
+                  // Missão PENDENTE: botão de gelo outline
                   if (mission.isPendente) ...[
                     const SizedBox(height: 12),
                     SizedBox(
@@ -272,13 +308,19 @@ class _MissionCard extends ConsumerWidget {
                         icon: const Icon(Icons.play_arrow, size: 18),
                         label: const Text('Iniciar missão'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white54,
-                          side: const BorderSide(color: Colors.white24),
+                          foregroundColor: _PenguinColors.iceBlue,
+                          side: const BorderSide(
+                            color: _PenguinColors.iceBlue,
+                            width: 1.5,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          textStyle: const TextStyle(fontSize: 13),
+                          textStyle: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
@@ -292,7 +334,6 @@ class _MissionCard extends ConsumerWidget {
     );
   }
 
-  /// Ativa esta missão manualmente (sem depender do GPS).
   void _ativarMissao(WidgetRef ref) {
     ref
         .read(missionProvider.notifier)
@@ -303,11 +344,14 @@ class _MissionCard extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1C1C2E),
+        backgroundColor: _PenguinColors.bgMid,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Concluir missão?',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: _PenguinColors.snowWhite,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         content: Text(
           'Tem certeza que deseja marcar "${mission.titulo}" como concluída?'
@@ -319,7 +363,7 @@ class _MissionCard extends ConsumerWidget {
             onPressed: () => Navigator.pop(ctx),
             child: const Text(
               'Cancelar',
-              style: TextStyle(color: Colors.white38),
+              style: TextStyle(color: _PenguinColors.iceBlue),
             ),
           ),
           ElevatedButton(
@@ -334,18 +378,25 @@ class _MissionCard extends ConsumerWidget {
                   SnackBar(
                     content: Row(
                       children: [
-                        const Icon(Icons.check_circle, color: Colors.white),
+                        const Icon(
+                          Icons.check_circle,
+                          color: _PenguinColors.deepBlue,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             mission.proximoEnvironmentId != null
                                 ? 'Missão concluída! Novo ambiente desbloqueado 🗺️'
                                 : '"${mission.titulo}" concluída!',
+                            style: const TextStyle(
+                              color: _PenguinColors.deepBlue,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    backgroundColor: Colors.green.shade700,
+                    backgroundColor: _PenguinColors.yellowMain,
                     duration: const Duration(seconds: 3),
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
@@ -356,11 +407,12 @@ class _MissionCard extends ConsumerWidget {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.shade700,
-              foregroundColor: Colors.white,
+              backgroundColor: _PenguinColors.yellowMain,
+              foregroundColor: _PenguinColors.deepBlue,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
+              textStyle: const TextStyle(fontWeight: FontWeight.bold),
             ),
             child: const Text('Confirmar'),
           ),

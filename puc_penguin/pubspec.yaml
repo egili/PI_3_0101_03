@@ -39,3 +39,6 @@ flutter:
   - assets/icon/icon.png
   - assets/images/environments/
   - assets/audio/
+  - assets/player/
+  - assets/player/idle/
+  - assets/npcs/
