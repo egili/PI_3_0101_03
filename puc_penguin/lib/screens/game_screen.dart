@@ -10,6 +10,8 @@ import '../providers/mission_provider.dart';
 import 'environments_screen.dart';
 import 'missions_screen.dart';
 import 'dart:async';
+import '../providers/dialogue_provider.dart';
+import '../widgets/dialog_box.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
@@ -351,8 +353,10 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // NOVO: observa a missão ativa para o HUD
+    // Observa a missão ativa para o HUD
     final missaoAtiva = ref.watch(missaoAtivaProvider);
+    // NOVO: Observa o estado do diálogo
+    final currentDialogue = ref.watch(dialogueProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -365,47 +369,84 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.location_on, size: 50, color: Colors.blue),
-            const SizedBox(height: 20),
-            Text(
-              _locationMessage,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              _coords,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 30),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue),
-              ),
-              child: Text(
-                _currentEnvironment,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+      body: Stack(
+        children: [
+          // CONTEÚDO ORIGINAL DO MAPA E HUD
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.location_on, size: 50, color: Colors.blue),
+                const SizedBox(height: 20),
+                Text(
+                  _locationMessage,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16),
                 ),
-                textAlign: TextAlign.center,
+                const SizedBox(height: 10),
+                Text(
+                  _coords,
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 30),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.blue),
+                  ),
+                  child: Text(
+                    _currentEnvironment,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+                // HUD com a missão ativa
+                if (missaoAtiva != null) ...[
+                  const SizedBox(height: 20),
+                  _MissaoAtivaHUD(titulo: missaoAtiva.titulo),
+                ],
+
+                // NOVO: BOTÃO DE TESTE DE DIÁLOGO
+                const SizedBox(height: 30),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Inicia o diálogo do Dr. Garibaldo conforme mapeado no gameScript
+                    ref.read(dialogueProvider.notifier).startDialogue('h15_intro_1');
+                  },
+                  icon: const Icon(Icons.chat),
+                  label: const Text('Testar Diálogo Dr. Garibaldo'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // NOVO: OVERLAY DO DIÁLOGO
+          if (currentDialogue != null)
+            Positioned(
+              bottom: 20, // Posiciona a caixa na parte inferior da tela
+              left: 0,
+              right: 0,
+              child: DialogBox(
+                node: currentDialogue,
+                onNext: () {
+                  ref.read(dialogueProvider.notifier).next();
+                },
+                onChoiceSelected: (choice) {
+                  ref.read(dialogueProvider.notifier).makeChoice(choice);
+                },
               ),
             ),
-
-            // NOVO: HUD com a missão ativa
-            if (missaoAtiva != null) ...[
-              const SizedBox(height: 20),
-              _MissaoAtivaHUD(titulo: missaoAtiva.titulo),
-            ],
-          ],
-        ),
+        ],
       ),
     );
   }
