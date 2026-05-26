@@ -18,7 +18,7 @@ final List<Environment> staticEnvironments = [
     latitude: -22.833900994731703,
     longitude: -47.05184828539257,
     radius: 15.0,
-    audioAsset: 'assets/audio/library_theme.mp3',
+    audioAsset: 'assets/audio/dojoteca_theme.mp3',
     isUnlocked: false,
   ),
   Environment(
@@ -28,7 +28,7 @@ final List<Environment> staticEnvironments = [
     latitude: -22.83240646531408,
     longitude: -47.05124895720967,
     radius: 35.0,
-    audioAsset: 'assets/audio/hospital_theme.mp3',
+    audioAsset: 'assets/audio/manacas_theme.mp3',
     isUnlocked: false,
   ),
   Environment(
@@ -38,7 +38,7 @@ final List<Environment> staticEnvironments = [
     latitude: -22.83388081560502,
     longitude: -47.05146812025525,
     radius: 15.0,
-    audioAsset: 'assets/audio/workshop_theme.mp3',
+    audioAsset: 'assets/audio/mescla_theme.mp3',
     isUnlocked: false,
   ),
   Environment(
@@ -48,7 +48,7 @@ final List<Environment> staticEnvironments = [
     latitude: -22.833043531432814,
     longitude: -47.05205417217558,
     radius: 30.0,
-    audioAsset: 'assets/audio/foodcourt_theme.mp3',
+    audioAsset: 'assets/audio/refeitorio_theme.mp3',
     isUnlocked: false,
   ),
 ];

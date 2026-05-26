@@ -7,6 +7,7 @@ import '../utils/constants.dart';
 import '../providers/game_provider.dart';
 import '../providers/mission_provider.dart';
 import '../services/firebase_progress_service.dart';
+import '../services/audio_service.dart';
 import '../models/player.dart';
 
 // ── Paleta temática PUC Penguin ───────────────────────────────────────────
@@ -34,6 +35,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    AudioService().playMenuMusic();
     _verificarSaveExistente();
   }
 
@@ -57,6 +59,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _iniciarNovoJogo() async {
     try {
+      AudioService().stopMusic();
       final firebaseService = ref.read(firebaseProgressServiceProvider);
       await firebaseService.garantirAutenticacao();
 
@@ -93,6 +96,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _continuarJogo() async {
     try {
+      AudioService().stopMusic();
       final firebaseService = ref.read(firebaseProgressServiceProvider);
       await firebaseService.garantirAutenticacao();
 
