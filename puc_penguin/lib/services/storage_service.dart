@@ -8,6 +8,7 @@ class StorageService {
   static const String _keyPlayerName = 'player_name';
   static const String _keyPlayerGender = 'player_gender';
   static const String _keyUnlockedEnvironments = 'unlocked_environments';
+  static const String _keyTutorialSeen = 'tutorial_seen';
 
   // ---------- SALVAR ----------
 
@@ -29,6 +30,18 @@ class StorageService {
   Future<void> saveUnlockedEnvironments(List<String> ids) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyUnlockedEnvironments, ids.join(','));
+  }
+
+  /// Salva que o usuário já viu o tutorial.
+  Future<void> saveTutorialSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyTutorialSeen, true);
+  }
+
+  /// Retorna se o tutorial já foi visto.
+  Future<bool> hasSeenTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyTutorialSeen) ?? false;
   }
 
 
