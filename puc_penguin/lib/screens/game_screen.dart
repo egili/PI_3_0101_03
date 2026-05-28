@@ -399,6 +399,28 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     );
   }
 
+  void _mostrarPopupMissaoConcluida(String titulo) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 10),
+            Text('Missão Concluída!'),
+          ],
+        ),
+        content: Text('Você completou a missão: $titulo'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Excelente!'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Environment? _checkActiveEnvironment(double lat, double lon) {
     for (var env in staticEnvironments) {
       double distance = Geolocator.distanceBetween(
@@ -864,6 +886,16 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                     onComplete: () {
                       final item = _getItemDoAmbiente(envId);
                       if (item != null && mounted) _mostrarPopupItemRecebido(item);
+
+                      // --- Atribuição de Companheiro conforme o roteiro ---
+                      if (envId == 'h15') {
+                        ref.read(companionProvider.notifier).state = 'Bibliotecário';
+                      } else if (envId == 'biblioteca') {
+                        ref.read(companionProvider.notifier).state = 'Enfermeira Joycelina';
+                      } else if (envId == 'hospital') {
+                        ref.read(companionProvider.notifier).state = 'Truffles';
+                      }
+                      // -------------------------------------------------
                     },
                   );
                 },
