@@ -88,7 +88,8 @@ class _TutorialScreenState extends State<TutorialScreen> {
                         child: page.imagePath != null
                             ? Image.asset(
                                 page.imagePath!,
-                                size: 80,
+                                width: 80,
+                                height: 80,
                                 fit: BoxFit.contain,
                               )
                             : Icon(page.icon, size: 80, color: Colors.blue.shade900),
