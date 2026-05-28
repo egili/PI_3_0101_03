@@ -15,6 +15,7 @@ import '../providers/dialogue_provider.dart';
 import '../widgets/dialog_box.dart';
 import '../utils/app_router.dart';
 import '../utils/transitions.dart';
+import '../services/audio_service.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
@@ -121,6 +122,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     if (environment != null && environment.id != _lastEnvironmentId) {
       _lastEnvironmentId = environment.id;
       _vibrate();
+      AudioService().playEnvironmentMusic(environment.audioAsset);
       // Salva no Firebase em background — não bloqueia o fluxo do jogo
       _salvarAmbienteNoFirebase(environment);
       ref.read(missionProvider.notifier).atualizarMissaoAtiva(environment.id);
@@ -130,6 +132,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       });
     } else if (environment == null) {
       _lastEnvironmentId = null;
+      AudioService().stopMusic();
       ref.read(dialogueProvider.notifier).closeDialogue();
       setState(() {
         _ambienteAtual = null;

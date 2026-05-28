@@ -13,17 +13,20 @@ dependencies:
   cupertino_icons: ^1.0.8
   geolocator: ^14.0.2
   permission_handler: ^12.0.1
-  flutter_riverpod: ^3.3.1
+  flutter_riverpod: ^2.6.1
   shared_preferences: ^2.2.2
   firebase_core: ^4.8.0
   cloud_firestore: ^6.4.0
   firebase_auth: ^6.5.0
+  audioplayers: ^6.6.0
+  flutter_native_splash: ^2.4.7
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.7
 
 flutter_launcher_icons:
   android: true
@@ -31,9 +34,30 @@ flutter_launcher_icons:
   image_path: "assets/icon/icon.png"
   min_sdk_android: 21
 
+flutter_native_splash:
+  color: "#0A1220"
+  fullscreen: true
+  android: true
+  ios: false
+  android_12:
+    color: "#0A1220"
+    background_image: "assets/splash/splash_bg.png"
+    icon_background_color: "#0A1220"
+
 flutter:
   uses-material-design: true
   assets:
-  - assets/logo.png
-  - assets/icon/icon.png
-  - assets/images/environments/
+    - assets/logo.png
+    - assets/icon/icon.png
+    - assets/splash/
+    - assets/images/environments/
+    - assets/audio/
+    - assets/player/
+    - assets/player/idle/
+    - assets/npcs/Pingulino/
+    - assets/npcs/Niyagi/
+    - assets/npcs/Joycelina/
+    - assets/npcs/Truffles/
+    - assets/npcs/Frigelino/
+    - assets/npcs/Buffles/
+    - assets/backgrounds/
