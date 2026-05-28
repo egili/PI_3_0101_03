@@ -1,7 +1,6 @@
 import '../models/mission.dart';
 
-// IDs de ambiente usados: 'h15', 'biblioteca', 'hospital', 'oficina', 'mercadao'
-// (conforme constants/environments.dart)
+// IDs de ambiente: 'h15', 'biblioteca', 'hospital', 'oficina', 'mercadao'
 
 final List<Mission> staticMissions = [
   Mission(
@@ -38,7 +37,7 @@ final List<Mission> staticMissions = [
     id: 'm5_pecas',
     titulo: 'Peças da Verdade',
     descricao:
-        'Colete as peças espalhadas na Oficina para reconstruir o dispositivo.',
+        'Colete as peças espalhadas pela oficina para reconstruir o dispositivo.',
     environmentId: 'hospital',
     proximoEnvironmentId: 'oficina',
   ),

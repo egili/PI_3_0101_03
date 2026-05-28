@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/mission.dart';
 import '../constants/missions.dart';
@@ -74,22 +75,55 @@ class MissionNotifier extends AsyncNotifier<List<Mission>> {
   /// Atualiza qual missão está ativa com base no ambiente atual.
   /// Chamado pelo GPS quando o jogador entra em um novo ambiente.
   void atualizarMissaoAtiva(String environmentId) {
-    state = state.whenData(
-      (missions) => missions.map((m) {
+    state = state.whenData((missions) {
+      // Só ativa a PRIMEIRA missão não concluída do ambiente — evita
+      // que múltiplas missões do mesmo ambiente fiquem ativas ao mesmo tempo.
+      bool jaAtivou = false;
+      return missions.map((m) {
         if (m.isConcluida) return m;
-        if (m.environmentId == environmentId) {
+        if (!jaAtivou && m.environmentId == environmentId) {
+          jaAtivou = true;
           return m.copyWith(status: MissionStatus.ativa);
         }
         if (m.isAtiva) return m.copyWith(status: MissionStatus.pendente);
         return m;
-      }).toList(),
-    );
+      }).toList();
+    });
   }
 
   /// Recarrega do Firebase — usar ao retomar o jogo.
   Future<void> recarregar() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(_carregarMissoes);
+  }
+
+  /// Reseta todas as missões para pendente (usado em "Novo Jogo").
+  /// Limpa também o Firebase e restaura o estado inicial dos ambientes.
+  Future<void> resetar() async {
+    // Reset imediato das missões na UI
+    state = AsyncData(staticMissions.toList());
+
+    // Reseta ambientes: só o h15 começa desbloqueado
+    ref.read(unlockedEnvironmentsProvider.notifier).state = ['h15'];
+    ref.read(currentEnvironmentIdProvider.notifier).state = null;
+
+    // Persiste o reset no Firebase
+    try {
+      final deviceId = await ref.read(deviceIdProvider.future);
+      final firebaseService = ref.read(firebaseProgressServiceProvider);
+      final player = ref.read(playerProvider);
+      await firebaseService.salvarProgresso(
+        deviceId: deviceId,
+        playerName: player?.name ?? 'Jogador',
+        gender: player?.gender.name ?? 'male',
+        currentEnvironmentId: null,
+        unlockedEnvironments: const ['h15'],
+        missoesConcluidas: const [],
+        escolhas: const {},
+      );
+    } catch (e) {
+      debugPrint('Erro ao resetar no Firebase: $e');
+    }
   }
 }
 

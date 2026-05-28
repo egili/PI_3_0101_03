@@ -64,6 +64,20 @@ class StorageService {
     await prefs.clear();
   }
 
+  static const String _keyTutorialSeen = 'tutorial_seen';
+
+  /// Marca o tutorial como visto.
+  Future<void> saveTutorialSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyTutorialSeen, true);
+  }
+
+  /// Verifica se o tutorial já foi visto.
+  Future<bool> hasTutorialSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyTutorialSeen) ?? false;
+  }
+
   /// Verifica se já existe um jogo salvo.
   Future<bool> hasSavedGame() async {
     final prefs = await SharedPreferences.getInstance();
