@@ -17,7 +17,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
     TutorialPage(
       title: 'Bem-vindo ao PUC Penguin!',
       description: 'Prepare-se para explorar a universidade e descobrir segredos escondidos em cada canto.',
-      icon: Icons.cruelty_free,
+      imagePath: 'assets/logo.png',
       color: Colors.blue.shade100,
     ),
     TutorialPage(
@@ -85,7 +85,13 @@ class _TutorialScreenState extends State<TutorialScreen> {
                           color: page.color,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(page.icon, size: 80, color: Colors.blue.shade900),
+                        child: page.imagePath != null
+                            ? Image.asset(
+                                page.imagePath!,
+                                size: 80,
+                                fit: BoxFit.contain,
+                              )
+                            : Icon(page.icon, size: 80, color: Colors.blue.shade900),
                       ),
                       const SizedBox(height: 40),
                       Text(
@@ -152,13 +158,15 @@ class _TutorialScreenState extends State<TutorialScreen> {
 class TutorialPage {
   final String title;
   final String description;
-  final IconData icon;
+  final IconData? icon;
+  final String? imagePath;
   final Color color;
 
   TutorialPage({
     required this.title,
     required this.description,
-    required this.icon,
+    this.icon,
+    this.imagePath,
     required this.color,
   });
 }
