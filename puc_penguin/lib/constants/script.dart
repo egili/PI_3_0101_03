@@ -10,161 +10,183 @@ final Map<String, DialogueNode> gameScript = {
   // Missão ativada: m1_bibliotecario
   // ══════════════════════════════════════════════════════════════════════════
 
+  'h15_intro_0': DialogueNode(
+    id: 'h15_intro_0',
+    characterName: 'Narrador',
+    text: 'Você abre os olhos aos poucos. A última coisa que lembra é uma explosão. Depois, o vazio. Agora, uma luz fraca pisca acima de você. Alguém fala ao longe…',
+    nextNodeId: 'h15_intro_1',
+  ),
+
   'h15_intro_1': DialogueNode(
     id: 'h15_intro_1',
     characterName: 'Dr. Garibaldo',
-    text:
-        'Você acordou! Excelente! Quer dizer… dentro de uma margem aceitável… talvez nem tanto… eu já estava considerando uma falha no protocolo o que seria ruim. Muito ruim. Deve ter sido algum erro no coeficiente neural… ou no criogênico… depois eu vejo isso. Isso não importa agora! Como você está se sentindo?',
+    text: 'Jogador, acorde! Acorde!',
+    nextNodeId: 'h15_intro_title',
+  ),
+
+  'h15_intro_title': DialogueNode(
+    id: 'h15_intro_title',
+    characterName: 'Narrador',
+    text: 'CAPÍTULO I: O DESPERTAR',
+    nextNodeId: 'h15_intro_2',
+  ),
+
+  'h15_intro_2': DialogueNode(
+    id: 'h15_intro_2',
+    characterName: 'Dr. Garibaldo',
+    text: 'Você acordou! Excelente! Quer dizer… dentro de uma margem aceitável… talvez nem tanto… eu já estava considerando uma falha no protocolo, o que seria ruim. Muito Ruim. Deve ter sido algum erro no coeficiente neural… ou no criogênico… depois eu vejo isso. Isso não importa agora! Como você está se sentindo?',
+    nextNodeId: 'h15_intro_lib',
+  ),
+
+  'h15_intro_lib': DialogueNode(
+    id: 'h15_intro_lib',
+    characterName: 'Bibliotecário',
+    text: 'E-ele está mesmo bem? Isso parece… errado…',
     choices: [
-      DialogueChoice(text: 'O que aconteceu aqui?', nextNodeId: 'h15_intro_2a'),
-      DialogueChoice(text: 'Quem são vocês?', nextNodeId: 'h15_intro_2b'),
-      DialogueChoice(text: 'Eu vou embora daqui.', nextNodeId: 'h15_intro_2c'),
+      DialogueChoice(text: '“O que aconteceu aqui?”', nextNodeId: 'h15_expl_1'),
+      DialogueChoice(text: '“Quem são vocês?”', nextNodeId: 'h15_block_a'),
+      DialogueChoice(text: '“Eu vou embora daqui.”', nextNodeId: 'h15_block_b'),
     ],
   ),
 
-  // Opção 2 — Quem são vocês?
-  'h15_intro_2b': DialogueNode(
-    id: 'h15_intro_2b',
+  'h15_block_a': DialogueNode(
+    id: 'h15_block_a',
     characterName: 'Dr. Garibaldo',
-    text:
-        'Ah! Sim, apresentações! Eu sou o Dr. Garibaldo Pingulino, cientista-chefe deste laboratório! E ele é o Bibliotecário… que claramente não deveria estar aqui.',
+    text: 'Ah! Sim, apresentações! Eu sou o Dr. Garibaldo Pingulino, cientista-chefe deste laboratório! E ele é o Bibliotecário… que claramente não deveria estar aqui.',
     choices: [
-      DialogueChoice(text: 'O que aconteceu aqui?', nextNodeId: 'h15_intro_2a'),
-      DialogueChoice(text: 'Eu vou embora daqui.', nextNodeId: 'h15_intro_2c'),
+      DialogueChoice(text: '“O que aconteceu aqui?”', nextNodeId: 'h15_expl_1'),
+      DialogueChoice(text: '“Eu vou embora daqui.”', nextNodeId: 'h15_block_b'),
     ],
   ),
 
-  // Opção 3 — Eu vou embora
-  'h15_intro_2c': DialogueNode(
-    id: 'h15_intro_2c',
+  'h15_block_b': DialogueNode(
+    id: 'h15_block_b',
     characterName: 'Dr. Garibaldo',
-    text:
-        'Não recomendo. Lá fora está… instável. E perigoso. Você precisa entender o que está acontecendo antes.',
+    text: 'Não recomendo. Lá fora está… instável. E perigoso. Você precisa entender o que está acontecendo antes.',
     choices: [
-      DialogueChoice(text: 'O que aconteceu aqui?', nextNodeId: 'h15_intro_2a'),
-      DialogueChoice(text: 'Quem são vocês?', nextNodeId: 'h15_intro_2b'),
+      DialogueChoice(text: '“O que aconteceu aqui?”', nextNodeId: 'h15_expl_1'),
+      DialogueChoice(text: '“Quem são vocês?”', nextNodeId: 'h15_block_a'),
     ],
   ),
 
-  // Opção 1 — Correta: O que aconteceu aqui?
-  'h15_intro_2a': DialogueNode(
-    id: 'h15_intro_2a',
+  'h15_expl_1': DialogueNode(
+    id: 'h15_expl_1',
     characterName: 'Dr. Garibaldo',
-    text:
-        'Direto ao ponto! Ótimo! Quer dizer… não ótimo, porque a situação não é ótima… mas eficiente. A ilha foi atacada. Por um indivíduo, ou entidade, ainda não descartei essa possibilidade, com capacidades… anômalas. Ele não apenas destruiu coisas… ele… reorganizou tudo. De forma errada.',
-    nextNodeId: 'h15_intro_3',
+    text: 'Direto ao ponto! Ótimo! Quer dizer… não ótimo, porque a situação não é ótima… mas eficiente. A ilha foi atacada. Por um indivíduo, ou entidade – ainda não descartei essa possibilidade – com capacidades… anômalas. Ele não apenas destruiu coisas… ele… reorganizou tudo. De forma errada.',
+    nextNodeId: 'h15_expl_2',
   ),
 
-  'h15_intro_3': DialogueNode(
-    id: 'h15_intro_3',
+  'h15_expl_2': DialogueNode(
+    id: 'h15_expl_2',
     characterName: 'Dr. Garibaldo',
-    text:
-        'Você está no H15… meu laboratório… ou pelo menos o que restou dele. A ilha… bem… ela foi estruturalmente comprometida. Não completamente destruída, mas funcionalmente… caótica. Nem sabemos mais há quanto tempo isso aconteceu. O tempo ficou… impreciso depois do evento.',
-    nextNodeId: 'h15_intro_4',
+    text: 'Você está no H15… meu laboratório… ou pelo menos o que restou dele. A ilha… bem… ela foi estruturalmente comprometida. Não completamente destruída, mas funcionalmente… caótica. Nem sabemos mais há quanto tempo isso aconteceu. O tempo ficou… impreciso depois do evento.',
+    nextNodeId: 'h15_expl_3',
   ),
 
-  'h15_intro_4': DialogueNode(
-    id: 'h15_intro_4',
-    characterName: 'Sr. Niyagi',
+  'h15_expl_3': DialogueNode(
+    id: 'h15_expl_3',
+    characterName: 'Bibliotecário',
     text: 'A sociedade da forma que conhecemos, ruiu…',
-    nextNodeId: 'h15_intro_5',
+    nextNodeId: 'h15_expl_4',
   ),
 
-  'h15_intro_5': DialogueNode(
-    id: 'h15_intro_5',
+  'h15_expl_4': DialogueNode(
+    id: 'h15_expl_4',
     characterName: 'Dr. Garibaldo',
-    text:
-        'E tem outra coisa… a comida. Toda a comida. Ela não foi simplesmente levada. Ela foi… drenada. Como se alguém tivesse isolado e extraído a essência energética dos alimentos. Eu ainda estou tentando modelar isso matematicamente, mas… não está fechando.',
-    nextNodeId: 'h15_intro_6',
+    text: 'E tem outra coisa… a comida. Toda a comida. Ela não foi simplesmente levada. Ela foi… drenada. Como se alguém tivesse isolado e extraído a essência energética dos alimentos. Eu ainda estou tentando modelar isso matematicamente, mas… não está fechando.',
+    nextNodeId: 'h15_expl_5',
   ),
 
-  'h15_intro_6': DialogueNode(
-    id: 'h15_intro_6',
+  'h15_expl_5': DialogueNode(
+    id: 'h15_expl_5',
     characterName: 'Dr. Garibaldo',
-    text:
-        'Ele não causou só a destruição física… ele interferiu na organização do espaço… ou das pessoas… ou de ambos. Indivíduos foram deslocados de seus pontos de origem e redistribuídos de forma aleatória. Ou pior… intencional. Veja ele! O Bibliotecário deveria estar na Biblioteca, mas está aqui. Isso quebra completamente qualquer lógica de sistema!',
-    nextNodeId: 'h15_intro_7',
+    text: 'Ele não causou só a destruição física… ele interferiu na organização do espaço… ou das pessoas… ou de ambos. Indivíduos foram deslocados de seus pontos de origem e redistribuídos de forma aleatória. Ou pior… intencional. Veja ele! O Bibliotecário deveria estar na Biblioteca, mas está aqui. Isso quebra completamente qualquer lógica de sistema! E quando a lógica quebra… coisas ruins acontecem. Muito ruins.',
+    nextNodeId: 'h15_expl_6',
   ),
 
-  'h15_intro_7': DialogueNode(
-    id: 'h15_intro_7',
-    characterName: 'Sr. Niyagi',
-    text:
-        'E-eu… eu não consigo lembrar… Eu estava organizando as estantes, como sempre… e então… tudo ficou escuro… vazio… e quando percebi… eu estava aqui…',
-    nextNodeId: 'h15_intro_8',
+  'h15_expl_6': DialogueNode(
+    id: 'h15_expl_6',
+    characterName: 'Bibliotecário',
+    text: 'E-eu… eu não consigo lembrar… Eu estava organizando as estantes, como sempre… e então… tudo ficou escuro… vazio… e quando percebi… eu estava aqui…',
+    nextNodeId: 'h15_expl_7',
   ),
 
-  'h15_intro_8': DialogueNode(
-    id: 'h15_intro_8',
+  'h15_expl_7': DialogueNode(
+    id: 'h15_expl_7',
     characterName: 'Dr. Garibaldo',
-    text:
-        'E… tem os rumores… que eu não gosto de considerar, mas também não posso ignorar… Dizem que ele não está sozinho. Que ele faz parte de uma organização… uma sociedade secreta… os chamados Illuminati dos mares. Ninguém sabe ao certo quem ou o que eles são. Mas uma coisa eu garanto… Ele é… CRUEL. METODICAMENTE CRUEL. E PODEROSO de um jeito que eu não consigo quantificar ainda… o que é… preocupante. Quando ele voltar… eu não sei se estaremos preparados.',
-    nextNodeId: 'h15_intro_9',
+    text: 'E… tem os rumores… que eu não gosto de considerar, mas também não posso ignorar… Dizem que ele não está sozinho. Que ele faz parte de uma organização… uma sociedade secreta… os chamados Illuminati dos mares. Ninguém sabe ao certo quem ou o que eles são. Mas uma coisa eu garanto… Ele é… cruel. Metodicamente cruel. E poderoso de um jeito que eu não consigo quantificar ainda… o que é… preocupante.',
+    nextNodeId: 'h15_expl_8',
   ),
 
-  'h15_intro_9': DialogueNode(
-    id: 'h15_intro_9',
+  'h15_expl_8': DialogueNode(
+    id: 'h15_expl_8',
+    characterName: 'Narrador',
+    text: 'QUANDO ELE VOLTAR… EU NÃO SEI SE ESTAREMOS PREPARADOS.',
+    nextNodeId: 'h15_expl_9',
+  ),
+
+  'h15_expl_9': DialogueNode(
+    id: 'h15_expl_9',
     characterName: 'Dr. Garibaldo',
-    text:
-        'Precisamos corrigir isso. Rapidamente. Antes que o sistema entre em colapso total… se já não entrou, o que é possível. Sem o Bibliotecário na Biblioteca, nós perdemos acesso aos registros, aos dados, às referências… e sem dados… eu não consigo pensar direito.',
+    text: 'Precisamos corrigir isso. Rapidamente. Antes que o sistema entre em colapso total… se já não entrou, o que é possível. Sem o Bibliotecário na Biblioteca, nós perdemos acesso aos registros, aos dados, às referências… e sem dados… eu não consigo pensar direito.',
     choices: [
-      DialogueChoice(text: 'Eu posso ajudar.', nextNodeId: 'h15_intro_10a'),
-      DialogueChoice(text: 'E quem disse que isso é problema meu?', nextNodeId: 'h15_intro_10b'),
-      DialogueChoice(text: 'Por que eu?', nextNodeId: 'h15_intro_10c'),
+      DialogueChoice(text: '“Eu posso ajudar.”', nextNodeId: 'h15_mission_1'),
+      DialogueChoice(text: '“E quem disse que isso é problema meu.”', nextNodeId: 'h15_block_c'),
+      DialogueChoice(text: '“Por que eu?”', nextNodeId: 'h15_block_d'),
     ],
   ),
 
-  // Opção 2 — não é problema meu
-  'h15_intro_10b': DialogueNode(
-    id: 'h15_intro_10b',
+  'h15_block_c': DialogueNode(
+    id: 'h15_block_c',
     characterName: 'Dr. Garibaldo',
-    text:
-        'Infelizmente, agora é sim. Você acordou no meio disso tudo. E talvez seja o único capaz de ajudar.',
+    text: 'Infelizmente, agora é sim. Você acordou no meio disso tudo. E talvez seja o único capaz de ajudar.',
     choices: [
-      DialogueChoice(text: 'Eu posso ajudar.', nextNodeId: 'h15_intro_10a'),
-      DialogueChoice(text: 'Por que eu?', nextNodeId: 'h15_intro_10c'),
+      DialogueChoice(text: '“Eu posso ajudar.”', nextNodeId: 'h15_mission_1'),
+      DialogueChoice(text: '“Por que eu?”', nextNodeId: 'h15_block_d'),
     ],
   ),
 
-  // Opção 3 — Por que eu?
-  'h15_intro_10c': DialogueNode(
-    id: 'h15_intro_10c',
+  'h15_block_d': DialogueNode(
+    id: 'h15_block_d',
     characterName: 'Dr. Garibaldo',
-    text:
-        '1. Porque você está aqui… o que já é estatisticamente improvável. 2. Porque eu não posso sair do laboratório. 3. Porque ele precisa de ajuda… e 4. porque, no momento, você é o único elemento funcional fora do sistema desorganizado.',
+    text: '1. Porque você está aqui… o que já é estatisticamente improvável. 2. Porque eu não posso sair do laboratório. 3. Porque ele precisa de ajuda… e 4. porque, no momento, você é o único elemento funcional fora do sistema desorganizado.',
     choices: [
-      DialogueChoice(text: 'Eu posso ajudar.', nextNodeId: 'h15_intro_10a'),
+      DialogueChoice(text: '“Eu posso ajudar.”', nextNodeId: 'h15_mission_1'),
     ],
   ),
 
-  // Opção 1 — Correta: Eu posso ajudar
-  'h15_intro_10a': DialogueNode(
-    id: 'h15_intro_10a',
+  'h15_mission_1': DialogueNode(
+    id: 'h15_mission_1',
     characterName: 'Dr. Garibaldo',
     text: 'Excelente! Finalmente alguém racional! Leve-o de volta à Biblioteca.',
-    nextNodeId: 'h15_intro_11',
+    nextNodeId: 'h15_mission_2',
   ),
 
-  'h15_intro_11': DialogueNode(
-    id: 'h15_intro_11',
-    characterName: 'Sr. Niyagi',
+  'h15_mission_2': DialogueNode(
+    id: 'h15_mission_2',
+    characterName: 'Bibliotecário',
     text: 'E-eu vou com você… acho que é melhor do que ficar aqui…',
-    nextNodeId: 'h15_intro_12',
+    nextNodeId: 'h15_mission_3',
   ),
 
-  'h15_intro_12': DialogueNode(
-    id: 'h15_intro_12',
+  'h15_mission_3': DialogueNode(
+    id: 'h15_mission_3',
     characterName: 'Dr. Garibaldo',
-    text:
-        'Leve isto. Um comunicador. Ele deve ser suficiente para te orientar… assumindo que o sistema de localização ainda esteja minimamente funcional… o que eu espero que esteja… eu acho que está.',
-    nextNodeId: 'h15_intro_13',
+    text: 'Leve isto. Um comunicador. Ele deve ser suficiente para te orientar… assumindo que o sistema de localização ainda esteja minimamente funcional… o que eu espero que esteja… eu acho que está.',
+    nextNodeId: 'h15_mission_4',
   ),
 
-  'h15_intro_13': DialogueNode(
-    id: 'h15_intro_13',
+  'h15_mission_4': DialogueNode(
+    id: 'h15_mission_4',
     characterName: 'Dr. Garibaldo',
-    text:
-        'E… tome cuidado. Ele não apenas destrói… ele observa… aprende… adapta. E eu prefiro não descobrir qual é o próximo passo dele, embora precise.',
+    text: 'E… tome cuidado. Ele não apenas destrói… ele observa… aprende… adapta. E eu prefiro não descobrir qual é o próximo passo dele, embora precise.',
+    nextNodeId: 'h15_mission_end',
+  ),
+
+  'h15_mission_end': DialogueNode(
+    id: 'h15_mission_end',
+    characterName: 'Narrador',
+    text: 'Missão 1: Leve o bibliotecário de volta para a biblioteca',
     nextNodeId: null,
   ),
 
@@ -225,7 +247,6 @@ final Map<String, DialogueNode> gameScript = {
     ],
   ),
 
-  // Buscas erradas
   'biblio_busca_errada1': DialogueNode(
     id: 'biblio_busca_errada1',
     characterName: 'Narrador',
@@ -280,7 +301,6 @@ final Map<String, DialogueNode> gameScript = {
     ],
   ),
 
-  // Encontrou a enfermeira
   'biblio_encontrou': DialogueNode(
     id: 'biblio_encontrou',
     characterName: 'Narrador',
@@ -429,7 +449,6 @@ final Map<String, DialogueNode> gameScript = {
     nextNodeId: 'hosp_maquina_1',
   ),
 
-  // Puzzle da máquina
   'hosp_maquina_1': DialogueNode(
     id: 'hosp_maquina_1',
     characterName: 'Narrador',
@@ -476,7 +495,6 @@ final Map<String, DialogueNode> gameScript = {
     nextNodeId: 'hosp_recalibra_1',
   ),
 
-  // Recalibrar Truffles
   'hosp_recalibra_1': DialogueNode(
     id: 'hosp_recalibra_1',
     characterName: 'Truffles',
@@ -732,10 +750,10 @@ final Map<String, DialogueNode> gameScript = {
     id: 'mercadao_perguntou',
     characterName: 'Chef Frigelino',
     text: 'Eu… improvisei com o que restou… uns restos que achei por aí…',
-    nextNodeId: 'mercadao_perguntou_narrador',
+    nextNodeId: 'mercadaon_perguntou_narrador',
   ),
-  'mercadao_perguntou_narrador': DialogueNode(
-    id: 'mercadao_perguntou_narrador',
+  'mercadaon_perguntou_narrador': DialogueNode(
+    id: 'mercadaon_perguntou_narrador',
     characterName: 'Narrador',
     text: 'A resposta parece vaga, talvez ensaiada.',
     choices: [
@@ -778,8 +796,8 @@ final Map<String, DialogueNode> gameScript = {
     nextNodeId: 'mercadao_apos_freezer',
   ),
 
-  'mercadao_apos_freezer': DialogueNode(
-    id: 'mercadao_apos_freezer',
+  'mercadaon_apos_freezer': DialogueNode(
+    id: 'mercadaon_apos_freezer',
     characterName: 'Chef Frigelino',
     text: 'Você viu demais… (pausa) Mas talvez… já estivesse destinado a isso.',
     nextNodeId: 'mercadao_buffles_chama',
@@ -902,7 +920,6 @@ final Map<String, DialogueNode> gameScript = {
     nextNodeId: 'mercadao_garibaldo_chega',
   ),
 
-  // Dr. Garibaldo chega
   'mercadao_garibaldo_chega': DialogueNode(
     id: 'mercadao_garibaldo_chega',
     characterName: 'Dr. Garibaldo',
@@ -979,7 +996,6 @@ final Map<String, DialogueNode> gameScript = {
     nextNodeId: 'mercadao_beta_surge',
   ),
 
-  // Beta surge
   'mercadao_beta_surge': DialogueNode(
     id: 'mercadao_beta_surge',
     characterName: 'Narrador',

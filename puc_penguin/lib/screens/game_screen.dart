@@ -16,6 +16,7 @@ import '../widgets/dialog_box.dart';
 import '../utils/app_router.dart';
 import '../utils/transitions.dart';
 import '../services/audio_service.dart';
+import '../providers/companion_provider.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
@@ -123,6 +124,37 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       _lastEnvironmentId = environment.id;
       _vibrate();
       AudioService().playEnvironmentMusic(environment.audioAsset);
+
+      // --- Lógica de Conclusão Automática de Missões ---
+      final companion = ref.read(companionProvider);
+      final missionNotifier = ref.read(missionProvider.notifier);
+
+      // Checar se a missão ativa deve ser concluída ao entrar neste ambiente
+      final activeMission = ref.read(missaoAtivaProvider);
+      if (activeMission != null) {
+        bool shouldComplete = false;
+
+        // Regras baseadas no roteiro
+        if (activeMission.id == 'm1_bibliotecario' && environment.id == 'biblioteca' && companion == 'Bibliotecário') {
+          shouldComplete = true;
+        } else if (activeMission.id == 'm3_levar_enfermeira' && environment.id == 'hospital' && companion == 'Enfermeira Joycelina') {
+          shouldComplete = true;
+        } else if (activeMission.id == 'm6_levar_truffles' && environment.id == 'oficina' && companion == 'Truffles') {
+          shouldComplete = true;
+        } else if (activeMission.id == 'm7_investigar_mercadao' && environment.id == 'mercadao') {
+          shouldComplete = true;
+        } else if (activeMission.id == 'm10_interromper_sistema' && environment.id == 'h15') {
+          // A m10 requer o puzzle, então não concluímos apenas por entrar.
+          shouldComplete = false;
+        }
+
+        if (shouldComplete) {
+          missionNotifier.concluirMissao(activeMission.id);
+          _mostrarPopupMissaoConcluida(activeMission.titulo);
+        }
+      }
+      // -------------------------------------------------
+
       // Salva no Firebase em background — não bloqueia o fluxo do jogo
       _salvarAmbienteNoFirebase(environment);
       ref.read(missionProvider.notifier).atualizarMissaoAtiva(environment.id);
@@ -428,7 +460,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   String _getDialogueIdForEnvironment(String? environmentId) {
     switch (environmentId) {
       case 'h15':
-        return 'h15_intro_1';
+        return 'h15_intro_0';
       case 'biblioteca':
         return 'biblio_intro_1';
       case 'hospital':

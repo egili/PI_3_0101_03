@@ -6,54 +6,66 @@ final List<Mission> staticMissions = [
   Mission(
     id: 'm1_bibliotecario',
     titulo: 'O Bibliotecário',
-    descricao:
-        'Encontre o bibliotecário na Dojoteca e descubra o que aconteceu com os registros da pesquisa.',
+    descricao: 'Leve o Bibliotecário de volta para a Biblioteca.',
     environmentId: 'h15',
     proximoEnvironmentId: 'biblioteca',
   ),
   Mission(
-    id: 'm2_pistas',
-    titulo: 'Pistas na Biblioteca',
-    descricao:
-        'Procure nas prateleiras os documentos que ligam o laboratório ao incidente.',
+    id: 'm2_encontrar_enfermeira',
+    titulo: 'A Enfermeira Escondida',
+    descricao: 'Encontre a Enfermeira Joycelina escondida na Dojoteca.',
     environmentId: 'biblioteca',
   ),
   Mission(
-    id: 'm3_enfermeira',
-    titulo: 'A Enfermeira',
-    descricao:
-        'Fale com a enfermeira no Hospital São Manacás e investigue a máquina experimental.',
+    id: 'm3_levar_enfermeira',
+    titulo: 'Caminho da Cura',
+    descricao: 'Leve a enfermeira para o Hospital São Manacás.',
     environmentId: 'biblioteca',
     proximoEnvironmentId: 'hospital',
   ),
   Mission(
-    id: 'm4_registros',
-    titulo: 'Registros Médicos',
-    descricao:
-        'Encontre os registros médicos escondidos no hospital antes que alguém os destrua.',
+    id: 'm4_consertar_maquina',
+    titulo: 'Reparo Tecnológico',
+    descricao: 'Conserte a máquina de reorganização no hospital para ajudar Truffles.',
     environmentId: 'hospital',
   ),
   Mission(
-    id: 'm5_pecas',
-    titulo: 'Peças da Verdade',
-    descricao:
-        'Colete as peças espalhadas pela oficina para reconstruir o dispositivo.',
+    id: 'm5_recalibrar_truffles',
+    titulo: 'Recalibração Final',
+    descricao: 'Use a máquina para recalibrar Truffles e devolvê-lo à sua forma original.',
+    environmentId: 'hospital',
+  ),
+  Mission(
+    id: 'm6_levar_truffles',
+    titulo: 'Retorno à Oficina',
+    descricao: 'Leve Truffles de volta para sua oficina no prédio do Mescla.',
     environmentId: 'hospital',
     proximoEnvironmentId: 'oficina',
   ),
   Mission(
-    id: 'm6_truffles',
-    titulo: 'Truffles na Oficina',
-    descricao:
-        'Encontre Truffles escondido entre as ferramentas e descubra sua parte na conspiração.',
+    id: 'm7_investigar_mercadao',
+    titulo: 'O Mistério do Refeitório',
+    descricao: 'Vá investigar o Mercadão da Ilha para entender o sumiço da comida.',
     environmentId: 'oficina',
     proximoEnvironmentId: 'mercadao',
   ),
   Mission(
-    id: 'm7_investigacao',
-    titulo: 'Investigação Final',
-    descricao:
-        'No Mercadão da Ilha, reúna todas as evidências e confronte o responsável.',
+    id: 'm8_investigar_painel',
+    titulo: 'Coração do Sistema',
+    descricao: 'Investigue o painel de distribuição externa no Mercadão.',
     environmentId: 'mercadao',
+  ),
+  Mission(
+    id: 'm9_derrotar_beta',
+    titulo: 'Confronto Lógico',
+    descricao: 'Derrote Beta, a personificação do algoritmo de controle.',
+    environmentId: 'mercadao',
+  ),
+  Mission(
+    id: 'm10_interromper_sistema',
+    titulo: 'Quebrando a Lógica',
+    descricao: 'Retorne ao H15 e interrompa o sistema central do reator.',
+    environmentId: 'mercadao',
+    proximoEnvironmentId: 'h15',
   ),
 ];
