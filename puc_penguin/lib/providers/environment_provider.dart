@@ -18,11 +18,6 @@ class EnvironmentNotifier extends StateNotifier<Environment?> {
 
       if (distance <= env.radius) {
         state = env;
-
-        // Auto-unlock logic
-        final progressSaver = ref.read(progressSaverProvider.notifier);
-        progressSaver.salvarDesbloqueio(env.id);
-
         return;
       }
     }
