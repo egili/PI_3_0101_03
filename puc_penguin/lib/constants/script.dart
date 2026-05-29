@@ -242,6 +242,13 @@ final Map<String, DialogueNode> gameScript = {
     id: 'biblio_missao2',
     characterName: 'Narrador',
     text: 'Missão 2: Encontrar a Enfermeira escondida na Dojoteca.',
+    nextNodeId: 'biblio_env_desc',
+  ),
+
+  'biblio_env_desc': DialogueNode(
+    id: 'biblio_env_desc',
+    characterName: 'Narrador',
+    text: 'A Dojoteca está silenciosa demais. As estantes se estendem em fileiras desorganizadas. Algumas áreas estão mais escuras que outras… talvez alguém esteja se escondendo.',
     nextNodeId: 'biblio_intro_6',
   ),
 
@@ -835,6 +842,13 @@ final Map<String, DialogueNode> gameScript = {
     id: 'mercadao_buffles_1',
     characterName: 'Buffles Cozinheiro',
     text: 'Brrr… brrr…',
+    nextNodeId: 'mercadao_farsa_revelada',
+  ),
+
+  'mercadao_farsa_revelada': DialogueNode(
+    id: 'mercadao_farsa_revelada',
+    characterName: 'Narrador',
+    text: 'O silêncio do refeitório desaba de forma pesada. A farsa foi descoberta e agora o cenário mudou.',
     nextNodeId: 'mercadao_apos_freezer',
   ),
 
@@ -1166,8 +1180,8 @@ final Map<String, DialogueNode> gameScript = {
     text: 'Você conseguiu neutralizar a barreira de Beta… Mas o núcleo do sistema central continua executando as diretrizes automáticas de compressão da ilha.',
     choices: [
       DialogueChoice(text: 'Isso tudo vai terminar aqui e agora.',           nextNodeId: 'h15_final_2a'),
-      DialogueChoice(text: 'Eu já cumpri o meu papel, já fiz o suficiente.', nextNodeId: 'h15_final_2b'),
-      DialogueChoice(text: 'Apenas aperte o botão de interrupção manual.',   nextNodeId: 'h15_final_2c'),
+      DialogueChoice(text: 'Eu já cumpri o meu papel guiando os refugiados, já fiz o suficiente por esta ilha.', nextNodeId: 'h15_final_2b'),
+      DialogueChoice(text: 'Apenas aperte o botão de interrupção manual e desligue isso de uma vez.',   nextNodeId: 'h15_final_2c'),
     ],
   ),
 

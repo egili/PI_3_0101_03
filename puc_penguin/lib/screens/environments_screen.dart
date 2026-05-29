@@ -144,7 +144,7 @@ class _EnvironmentCard extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text(
-                'Este ambiente está bloqueado. Visite o local para desbloqueá-lo!',
+                'Este ambiente está bloqueado. Avance na história para desbloqueá-lo!',
                 style: TextStyle(
                   color: _PenguinColors.deepBlue,
                   fontWeight: FontWeight.w600,
@@ -315,7 +315,7 @@ class _EnvironmentCard extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         const Text(
-          'Visite este local para desbloquear',
+          'Avance na história para desbloquear',
           style: TextStyle(color: _PenguinColors.iceBlue, fontSize: 12),
           textAlign: TextAlign.center,
         ),

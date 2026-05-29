@@ -130,7 +130,7 @@ class _EnvironmentCard extends StatelessWidget {
                   )
                 else
                   const Text(
-                    'Visite este local para desbloquear',
+                    'Avance na história para desbloquear',
                     style: TextStyle(
                       color: Colors.grey,
                       fontSize: 13,
