@@ -677,6 +677,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   Widget build(BuildContext context) {
     final missaoAtiva = ref.watch(missaoAtivaProvider);
     final currentDialogue = ref.watch(dialogueProvider);
+    final session = ref.watch(locationSessionProvider);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -766,7 +767,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   children: [
                     const SizedBox(height: 16),
                     Text(
-                      _locationMessage,
+                      session.locationMessage,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 14,
@@ -777,7 +778,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _coords,
+                      session.coords,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -795,7 +796,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                         border: Border.all(color: Colors.white30),
                       ),
                       child: Text(
-                        _currentEnvironment,
+                        session.currentEnvironment,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
