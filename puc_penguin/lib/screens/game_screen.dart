@@ -125,16 +125,15 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       _vibrate();
       AudioService().playEnvironmentMusic(environment.audioAsset);
 
-      // --- Lógica de Conclusão Automática de Missões ---
+      // --- Lógica de Conclusão Automática de Missões (Transporte/Chegada) ---
       final companion = ref.read(companionProvider);
       final missionNotifier = ref.read(missionProvider.notifier);
 
-      // Checar se a missão ativa deve ser concluída ao entrar neste ambiente
       final activeMission = ref.read(missaoAtivaProvider);
       if (activeMission != null) {
         bool shouldComplete = false;
 
-        // Regras baseadas no roteiro
+        // Regras de transporte: Conclui ao chegar no ambiente com o NPC correto
         if (activeMission.id == 'm1_bibliotecario' && environment.id == 'biblioteca' && companion == 'Bibliotecário') {
           shouldComplete = true;
         } else if (activeMission.id == 'm3_levar_enfermeira' && environment.id == 'hospital' && companion == 'Enfermeira Joycelina') {
@@ -143,9 +142,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           shouldComplete = true;
         } else if (activeMission.id == 'm7_investigar_mercadao' && environment.id == 'mercadao') {
           shouldComplete = true;
-        } else if (activeMission.id == 'm10_interromper_sistema' && environment.id == 'h15') {
-          // A m10 requer o puzzle, então não concluímos apenas por entrar.
-          shouldComplete = false;
         }
 
         if (shouldComplete) {
@@ -883,7 +879,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                   final envId = _lastEnvironmentId;
                   ref.read(dialogueProvider.notifier).startDialogue(
                     dialogueId,
-                    onComplete: () {
+                    onComplete: (nodeId) {
                       final item = _getItemDoAmbiente(envId);
                       if (item != null && mounted) _mostrarPopupItemRecebido(item);
 
@@ -895,7 +891,24 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       } else if (envId == 'hospital') {
                         ref.read(companionProvider.notifier).state = 'Truffles';
                       }
-                      // -------------------------------------------------
+
+                      // --- Validação de Missões via História (Nós Finais) ---
+                      final missionNotifier = ref.read(missionProvider.notifier);
+                      if (nodeId == 'biblio_joycelina_4') {
+                        missionNotifier.concluirMissao('m2_encontrar_enfermeira');
+                        _mostrarPopupMissaoConcluida('A Enfermeira Escondida');
+                      } else if (nodeId == 'hosp_recalibra_6') {
+                        missionNotifier.concluirMissao('m4_consertar_maquina');
+                        _mostrarPopupMissaoConcluida('Reparo Tecnológico');
+                        missionNotifier.concluirMissao('m5_recalibrar_truffles');
+                        _mostrarPopupMissaoConcluida('Recalibração Final');
+                      } else if (nodeId == 'mercadao_batalha_inicio') {
+                        missionNotifier.concluirMissao('m8_investigar_painel');
+                        _mostrarPopupMissaoConcluida('Coração do Sistema');
+                      } else if (nodeId == 'h15_final_fim') {
+                        missionNotifier.concluirMissao('m10_interromper_sistema');
+                        _mostrarPopupMissaoConcluida('Quebrando a Lógica');
+                      }
                     },
                   );
                 },
