@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/dialogue.dart';
 import '../constants/script.dart';
+import 'game_provider.dart';
 
 // Nós finais corretos de cada arco — disparam onComplete ao fechar
 const _finalNodes = {

@@ -673,15 +673,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     }
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-
-  @override
-  void dispose() {
-    _positionStreamSubscription?.cancel();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final missaoAtiva = ref.watch(missaoAtivaProvider);
@@ -699,213 +690,205 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // ÁREA DO JOGO
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final w = constraints.maxWidth;
-                final h = constraints.maxHeight;
-                final npcSize = w * 0.40;
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final w = constraints.maxWidth;
+          final h = constraints.maxHeight;
+          final npcSize = w * 0.40;
 
-                return Stack(
-                  fit: StackFit.expand,
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              // FUNDO
+              Positioned.fill(
+                child: Image.asset(
+                  _getBackgroundImage(),
+                  fit: BoxFit.cover,
+                ),
+              ),
+
+              // NPCs — só aparecem dentro de um ambiente ativo
+              if (_lastEnvironmentId != null) ...[
+                if (_lastEnvironmentId == 'h15')
+                  Positioned(
+                    left: w * 0.06, bottom: h * 0.04,
+                    child: AnimatedSprite(
+                      frames: const ['assets/npcs/Pingulino/Pingulino.png'],
+                      size: npcSize,
+                    ),
+                  ),
+                if (_lastEnvironmentId == 'biblioteca')
+                  Positioned(
+                    left: w * 0.06, bottom: h * 0.04,
+                    child: AnimatedSprite(
+                      frames: const ['assets/npcs/Niyagi/Niyagi.png'],
+                      size: npcSize,
+                    ),
+                  ),
+                if (_lastEnvironmentId == 'hospital')
+                  Positioned(
+                    right: w * 0.06, bottom: h * 0.04,
+                    child: AnimatedSprite(
+                      frames: const ['assets/npcs/Joycelina/Joycelina.png'],
+                      size: npcSize,
+                    ),
+                  ),
+                if (_lastEnvironmentId == 'oficina')
+                  Positioned(
+                    left: w * 0.06, bottom: h * 0.04,
+                    child: AnimatedSprite(
+                      frames: const ['assets/npcs/Truffles/Truffles.png'],
+                      size: npcSize,
+                    ),
+                  ),
+                if (_lastEnvironmentId == 'mercadao') ...[
+                  Positioned(
+                    left: w * 0.04, bottom: h * 0.04,
+                    child: AnimatedSprite(
+                      frames: const ['assets/npcs/Frigelino/Frigelino.png'],
+                      size: npcSize,
+                    ),
+                  ),
+                  Positioned(
+                    right: w * 0.04, bottom: h * 0.04,
+                    child: AnimatedSprite(
+                      frames: const ['assets/npcs/Buffles/Buffles.png'],
+                      size: npcSize * 0.85,
+                    ),
+                  ),
+                ],
+              ],
+
+              // HUD
+              SafeArea(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // FUNDO
-                    Positioned.fill(
-                      child: Image.asset(
-                        _getBackgroundImage(),
-                        fit: BoxFit.cover,
+                    const SizedBox(height: 16),
+                    Text(
+                      _locationMessage,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                        shadows: [Shadow(blurRadius: 4, color: Colors.black)],
                       ),
                     ),
-
-                    // NPCs — só aparecem dentro de um ambiente ativo
-                    if (_lastEnvironmentId != null) ...[
-                      if (_lastEnvironmentId == 'h15')
-                        Positioned(
-                          left: w * 0.06, bottom: h * 0.04,
-                          child: AnimatedSprite(
-                            frames: const ['assets/npcs/Pingulino/Pingulino.png'],
-                            size: npcSize,
-                          ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _coords,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        shadows: [Shadow(blurRadius: 4, color: Colors.black)],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.45),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white30),
+                      ),
+                      child: Text(
+                        _currentEnvironment,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
                         ),
-                      if (_lastEnvironmentId == 'biblioteca')
-                        Positioned(
-                          left: w * 0.06, bottom: h * 0.04,
-                          child: AnimatedSprite(
-                            frames: const ['assets/npcs/Niyagi/Niyagi.png'],
-                            size: npcSize,
-                          ),
-                        ),
-                      if (_lastEnvironmentId == 'hospital')
-                        Positioned(
-                          right: w * 0.06, bottom: h * 0.04,
-                          child: AnimatedSprite(
-                            frames: const ['assets/npcs/Joycelina/Joycelina.png'],
-                            size: npcSize,
-                          ),
-                        ),
-                      if (_lastEnvironmentId == 'oficina')
-                        Positioned(
-                          left: w * 0.06, bottom: h * 0.04,
-                          child: AnimatedSprite(
-                            frames: const ['assets/npcs/Truffles/Truffles.png'],
-                            size: npcSize,
-                          ),
-                        ),
-                      if (_lastEnvironmentId == 'mercadao') ...[
-                        Positioned(
-                          left: w * 0.04, bottom: h * 0.04,
-                          child: AnimatedSprite(
-                            frames: const ['assets/npcs/Frigelino/Frigelino.png'],
-                            size: npcSize,
-                          ),
-                        ),
-                        Positioned(
-                          right: w * 0.04, bottom: h * 0.04,
-                          child: AnimatedSprite(
-                            frames: const ['assets/npcs/Buffles/Buffles.png'],
-                            size: npcSize * 0.85,
-                          ),
-                        ),
-                      ],
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    if (missaoAtiva != null) ...[
+                      const SizedBox(height: 12),
+                      _MissaoAtivaHUD(titulo: missaoAtiva.titulo),
                     ],
-
-                    // HUD
-                    SafeArea(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 16),
-                          Text(
-                            _locationMessage,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                              shadows: [Shadow(blurRadius: 4, color: Colors.black)],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _coords,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              shadows: [Shadow(blurRadius: 4, color: Colors.black)],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 24),
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.45),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.white30),
-                            ),
-                            child: Text(
-                              _currentEnvironment,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          if (missaoAtiva != null) ...[
-                            const SizedBox(height: 12),
-                            _MissaoAtivaHUD(titulo: missaoAtiva.titulo),
-                          ],
-                        ],
-                      ),
-                    // DIÁLOGO
-                    if (currentDialogue != null)
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxHeight: MediaQuery.of(context).size.height * 0.60,
-                          ),
-                          child: SingleChildScrollView(
-                            physics: const ClampingScrollPhysics(),
-                            child: DialogBox(
-                              node: currentDialogue,
-                              npcSprite: _getNpcSpriteForEnvironment(_lastEnvironmentId),
-                              playerSprite: _getPlayerSprite(),
-                              onNext: () => ref.read(dialogueProvider.notifier).next(),
-                              onChoiceSelected: (choice) =>
-                                  ref.read(dialogueProvider.notifier).makeChoice(choice),
-                            ),
-                          ),
-                        ),
-                      ),
                   ],
-                );
-              },
-            ),
-          ),
-
-
-          // PROMPT
-          if (_mostrarPromptDialogo && currentDialogue == null)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: _NpcPromptOverlay(
-                npcName: _getNpcNameForEnvironment(_lastEnvironmentId),
-                onFalar: () {
-                  setState(() => _mostrarPromptDialogo = false);
-                  final dialogueId = _getDialogueIdForEnvironment(_lastEnvironmentId);
-                  final envId = _lastEnvironmentId;
-                  ref.read(dialogueProvider.notifier).startDialogue(
-                    dialogueId,
-                    onComplete: (nodeId) {
-                      final item = _getItemDoAmbiente(envId);
-                      if (item != null && mounted) _mostrarPopupItemRecebido(item);
-
-                      // --- Atribuição de Companheiro conforme o roteiro ---
-                      if (envId == 'h15') {
-                        ref.read(companionProvider.notifier).state = 'Bibliotecário';
-                      } else if (envId == 'biblioteca') {
-                        ref.read(companionProvider.notifier).state = 'Enfermeira Joycelina';
-                      } else if (envId == 'hospital') {
-                        ref.read(companionProvider.notifier).state = 'Truffles';
-                      }
-
-                      // --- Validação de Missões via Story Service ---
-                      ref.read(missionStoryServiceProvider).validateDialogueCompletion(nodeId);
-
-                      // --- Gatilhos de Mudança de Tela (Batalha/Puzzle) ---
-                      if (nodeId == 'mercadao_batalha_inicio') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const BetaBattleScreen()),
-                        );
-                      } else if (nodeId == 'h15_final_4a') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const H15PuzzleScreen()),
-                        );
-                      }
-                    },
-                  );
-                },
-                onIgnorar: () => setState(() => _mostrarPromptDialogo = false),
+                ),
               ),
-            ),
-        ],
+
+              // DIÁLOGO
+              if (currentDialogue != null)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: h * 0.60,
+                    ),
+                    child: SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      child: DialogBox(
+                        node: currentDialogue,
+                        npcSprite: _getNpcSpriteForEnvironment(_lastEnvironmentId),
+                        playerSprite: _getPlayerSprite(),
+                        onNext: () => ref.read(dialogueProvider.notifier).next(),
+                        onChoiceSelected: (choice) =>
+                            ref.read(dialogueProvider.notifier).makeChoice(choice),
+                      ),
+                    ),
+                  ),
+                ),
+
+              // PROMPT
+              if (_mostrarPromptDialogo && currentDialogue == null)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: _NpcPromptOverlay(
+                    npcName: _getNpcNameForEnvironment(_lastEnvironmentId),
+                    onFalar: () {
+                      setState(() => _mostrarPromptDialogo = false);
+                      final dialogueId = _getDialogueIdForEnvironment(_lastEnvironmentId);
+                      final envId = _lastEnvironmentId;
+                      ref.read(dialogueProvider.notifier).startDialogue(
+                        dialogueId,
+                        onComplete: (nodeId) {
+                          final item = _getItemDoAmbiente(envId);
+                          if (item != null && mounted) _mostrarPopupItemRecebido(item);
+
+                          if (envId == 'h15') {
+                            ref.read(companionProvider.notifier).state = 'Bibliotecário';
+                          } else if (envId == 'biblioteca') {
+                            ref.read(companionProvider.notifier).state = 'Enfermeira Joycelina';
+                          } else if (envId == 'hospital') {
+                            ref.read(companionProvider.notifier).state = 'Truffles';
+                          }
+
+                          ref.read(missionStoryServiceProvider).validateDialogueCompletion(nodeId);
+
+                          if (nodeId == 'mercadao_batalha_inicio') {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const BetaBattleScreen()),
+                            );
+                          } else if (nodeId == 'h15_final_4a') {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const H15PuzzleScreen()),
+                            );
+                          }
+                        },
+                      );
+                    },
+                    onIgnorar: () => setState(() => _mostrarPromptDialogo = false),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
 }
+
 // ─────────────────────────────────────────────
 // PROMPT DE INTERAÇÃO COM NPC
 // ─────────────────────────────────────────────
