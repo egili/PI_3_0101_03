@@ -13,7 +13,7 @@ const _finalNodes = {
 };
 
 class DialogueNotifier extends Notifier<DialogueNode?> {
-  Function()? _onComplete;
+  void Function(String nodeId)? _onComplete;
   String _playerName = '';
 
   @override
@@ -24,7 +24,7 @@ class DialogueNotifier extends Notifier<DialogueNode?> {
     _playerName = name;
   }
 
-  void startDialogue(String startNodeId, {Function()? onComplete}) {
+  void startDialogue(String startNodeId, {void Function(String nodeId)? onComplete}) {
     _onComplete = onComplete;
     final raw = gameScript[startNodeId];
     state = raw != null ? _applyName(raw) : null;
@@ -75,10 +75,10 @@ class DialogueNotifier extends Notifier<DialogueNode?> {
     final lastId = previousId ?? state?.id;
     final wasCorrectEnding = lastId != null && _finalNodes.contains(lastId);
     state = null;
-    if (wasCorrectEnding) {
+    if (wasCorrectEnding && lastId != null) {
       final callback = _onComplete;
       _onComplete = null;
-      callback?.call();
+      callback?.call(lastId);
     } else {
       _onComplete = null;
     }
