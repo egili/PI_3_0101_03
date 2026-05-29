@@ -9,6 +9,7 @@ const _finalNodes = {
   'hosp_recalibra_6',
   'oficina_concluir_3',
   'mercadao_batalha_inicio',
+  'h15_final_4a',
   'h15_final_fim',
 };
 
@@ -42,6 +43,12 @@ class DialogueNotifier extends Notifier<DialogueNode?> {
 
   void makeChoice(DialogueChoice choice) {
     if (choice.onSelect != null) choice.onSelect!();
+
+    // Gatilho de estado: se o jogador escolheu comer no Mercadão
+    if (choice.nextNodeId == 'mercadao_comeu') {
+      ref.read(playerProvider.notifier).setConsumedSabotagedFood(true);
+    }
+
     if (choice.nextNodeId != null) {
       final raw = gameScript[choice.nextNodeId!];
       state = raw != null ? _applyName(raw) : null;

@@ -7,8 +7,12 @@ import '../constants/environments.dart';
 import '../models/environment.dart';
 import '../providers/game_provider.dart';
 import '../providers/mission_provider.dart';
+import '../services/mission_story_service.dart';
+import '../providers/location_session_provider.dart';
 import 'environments_screen.dart';
 import 'missions_screen.dart';
+import 'beta_battle_screen.dart';
+import 'h15_puzzle_screen.dart';
 import 'dart:async';
 import '../widgets/animated_sprite.dart';
 import '../providers/dialogue_provider.dart';
@@ -26,17 +30,6 @@ class GameScreen extends ConsumerStatefulWidget {
 }
 
 class _GameScreenState extends ConsumerState<GameScreen> {
-  final LocationService _locationService = LocationService();
-  StreamSubscription<Position>? _positionStreamSubscription;
-
-  String _locationMessage = 'Obtendo localização...';
-  String _coords = 'Lat: -, Lon: -';
-  String _currentEnvironment = 'Nenhum ambiente próximo';
-
-  final List<double> _latBuffer = [];
-  final List<double> _lonBuffer = [];
-  static const int _bufferSize = 5;
-
   String? _lastEnvironmentId;
   bool _salvando = false;
   bool _mostrarPromptDialogo = false;
@@ -47,73 +40,75 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     switch (_lastEnvironmentId) {
       case 'h15':
         return 'assets/backgrounds/h15.png';
-
       case 'biblioteca':
         return 'assets/backgrounds/biblioteca.png';
-
       case 'hospital':
         return 'assets/backgrounds/hospital.png';
-
       case 'oficina':
         return 'assets/backgrounds/oficina.png';
-
       case 'mercadao':
         return 'assets/backgrounds/mercadao.png';
-
       default:
         return 'assets/backgrounds/default.png';
     }
   }
-  //
 
   @override
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    _startTrackingLocation();
+
+    // Inicia o rastreamento via provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(locationSessionProvider.notifier).startTracking((env) {
+        _handleEnvironmentChange(env);
+      });
+    });
   }
 
-  void _startTrackingLocation() async {
-    try {
-      Position position = await _locationService.getCurrentLocation();
-      _updateLocationUI(position);
+  void _handleEnvironmentChange(Environment environment) {
+    if (environment.id != _lastEnvironmentId) {
+      _lastEnvironmentId = environment.id;
+      _vibrate();
+      AudioService().playEnvironmentMusic(environment.audioAsset);
 
-      _positionStreamSubscription = _locationService.getPositionStream().listen(
-        (Position position) => _updateLocationUI(position),
-        onError: (error) {
-          setState(() {
-            _locationMessage = 'Erro ao atualizar localização: $error';
-          });
-        },
-      );
-    } catch (e) {
-      setState(() => _locationMessage = 'Permissão de localização negada.');
+      final companion = ref.read(companionProvider);
+      final missionNotifier = ref.read(missionProvider.notifier);
+      final activeMission = ref.read(missaoAtivaProvider);
 
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text("Permissão Necessária"),
-            content: const Text(
-              "Você precisa aceitar a permissão de localização para o RPG funcionar.",
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text("Entendi"),
-              ),
-            ],
-          );
-        },
-      );
+      if (activeMission != null) {
+        bool shouldComplete = false;
+        if (activeMission.id == 'm1_bibliotecario' && environment.id == 'biblioteca' && companion == 'Bibliotecário') {
+          shouldComplete = true;
+        } else if (activeMission.id == 'm3_levar_enfermeira' && environment.id == 'hospital' && companion == 'Enfermeira Joycelina') {
+          shouldComplete = true;
+        } else if (activeMission.id == 'm6_levar_truffles' && environment.id == 'oficina' && companion == 'Truffles') {
+          shouldComplete = true;
+        } else if (activeMission.id == 'm7_investigar_mercadao' && environment.id == 'mercadao') {
+          shouldComplete = true;
+        }
+
+        if (shouldComplete) {
+          missionNotifier.concluirMissao(activeMission.id);
+          _mostrarPopupMissaoConcluida(activeMission.titulo);
+        }
+      }
+
+      _salvarAmbienteNoFirebase(environment);
+      ref.read(missionProvider.notifier).atualizarMissaoAtiva(environment.id);
+      setState(() {
+        _ambienteAtual = environment;
+        _mostrarPromptDialogo = true;
+      });
     }
   }
 
-  Future<void> _updateLocationUI(Position position) async {
-    _latBuffer.add(position.latitude);
-    _lonBuffer.add(position.longitude);
-    if (_latBuffer.length > _bufferSize) _latBuffer.removeAt(0);
-    if (_lonBuffer.length > _bufferSize) _lonBuffer.removeAt(0);
+  @override
+  void dispose() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    super.dispose();
+  }
+ _bufferSize) _lonBuffer.removeAt(0);
 
     final avgLat = _latBuffer.reduce((a, b) => a + b) / _latBuffer.length;
     final avgLon = _lonBuffer.reduce((a, b) => a + b) / _lonBuffer.length;
@@ -892,22 +887,20 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                         ref.read(companionProvider.notifier).state = 'Truffles';
                       }
 
-                      // --- Validação de Missões via História (Nós Finais) ---
-                      final missionNotifier = ref.read(missionProvider.notifier);
-                      if (nodeId == 'biblio_joycelina_4') {
-                        missionNotifier.concluirMissao('m2_encontrar_enfermeira');
-                        _mostrarPopupMissaoConcluida('A Enfermeira Escondida');
-                      } else if (nodeId == 'hosp_recalibra_6') {
-                        missionNotifier.concluirMissao('m4_consertar_maquina');
-                        _mostrarPopupMissaoConcluida('Reparo Tecnológico');
-                        missionNotifier.concluirMissao('m5_recalibrar_truffles');
-                        _mostrarPopupMissaoConcluida('Recalibração Final');
-                      } else if (nodeId == 'mercadao_batalha_inicio') {
-                        missionNotifier.concluirMissao('m8_investigar_painel');
-                        _mostrarPopupMissaoConcluida('Coração do Sistema');
-                      } else if (nodeId == 'h15_final_fim') {
-                        missionNotifier.concluirMissao('m10_interromper_sistema');
-                        _mostrarPopupMissaoConcluida('Quebrando a Lógica');
+                      // --- Validação de Missões via Story Service ---
+                      ref.read(missionStoryServiceProvider).validateDialogueCompletion(nodeId);
+
+                      // --- Gatilhos de Mudança de Tela (Batalha/Puzzle) ---
+                      if (nodeId == 'mercadao_batalha_inicio') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const BetaBattleScreen()),
+                        );
+                      } else if (nodeId == 'h15_final_4a') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const H15PuzzleScreen()),
+                        );
                       }
                     },
                   );

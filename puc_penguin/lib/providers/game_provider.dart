@@ -23,6 +23,11 @@ class PlayerNotifier extends Notifier<Player?> {
         player.gender == Gender.male ? 'male' : 'female');
   }
 
+  void setConsumedSabotagedFood(bool value) {
+    if (state == null) return;
+    state = state!.copyWith(consumedSabotagedFood: value);
+  }
+
   Future<void> loadPlayer() async {
     final name = await _storageService.loadPlayerName();
     final genderStr = await _storageService.loadPlayerGender();
