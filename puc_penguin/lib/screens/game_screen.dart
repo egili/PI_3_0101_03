@@ -820,36 +820,35 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                           ],
                         ],
                       ),
-                    ),
+                    // DIÁLOGO
+                    if (currentDialogue != null)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: MediaQuery.of(context).size.height * 0.60,
+                          ),
+                          child: SingleChildScrollView(
+                            physics: const ClampingScrollPhysics(),
+                            child: DialogBox(
+                              node: currentDialogue,
+                              npcSprite: _getNpcSpriteForEnvironment(_lastEnvironmentId),
+                              playerSprite: _getPlayerSprite(),
+                              onNext: () => ref.read(dialogueProvider.notifier).next(),
+                              onChoiceSelected: (choice) =>
+                                  ref.read(dialogueProvider.notifier).makeChoice(choice),
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 );
               },
             ),
           ),
 
-          // DIÁLOGO
-          if (currentDialogue != null)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.60,
-                ),
-                child: SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  child: DialogBox(
-                    node: currentDialogue,
-                    npcSprite: _getNpcSpriteForEnvironment(_lastEnvironmentId),
-                    playerSprite: _getPlayerSprite(),
-                    onNext: () => ref.read(dialogueProvider.notifier).next(),
-                    onChoiceSelected: (choice) =>
-                        ref.read(dialogueProvider.notifier).makeChoice(choice),
-                  ),
-                ),
-              ),
-            ),
 
           // PROMPT
           if (_mostrarPromptDialogo && currentDialogue == null)
