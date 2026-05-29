@@ -102,9 +102,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
       _salvarAmbienteNoFirebase(environment);
       ref.read(missionProvider.notifier).atualizarMissaoAtiva(environment.id);
+
+      // FIX: Only show dialogue prompt if we are not already in a conversation
+      final currentDialogue = ref.read(dialogueProvider);
       setState(() {
         _ambienteAtual = environment;
-        _mostrarPromptDialogo = true;
+        _mostrarPromptDialogo = (currentDialogue == null);
       });
     }
   }
