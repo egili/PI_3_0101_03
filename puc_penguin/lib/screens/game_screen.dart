@@ -68,6 +68,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
   void _handleEnvironmentChange(Environment environment) {
     if (environment.id != _lastEnvironmentId) {
+      final unlocked = ref.read(unlockedEnvironmentsProvider);
+      if (!unlocked.contains(environment.id)) {
+        _mostrarPopupAmbienteBloqueado(environment.name);
+        return;
+      }
+
       _lastEnvironmentId = environment.id;
       _vibrate();
       AudioService().playEnvironmentMusic(environment.audioAsset);
@@ -108,70 +114,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
- _bufferSize) _lonBuffer.removeAt(0);
-
-    final avgLat = _latBuffer.reduce((a, b) => a + b) / _latBuffer.length;
-    final avgLon = _lonBuffer.reduce((a, b) => a + b) / _lonBuffer.length;
-
-    final environment = _checkActiveEnvironment(avgLat, avgLon);
-
-    if (environment != null && environment.id != _lastEnvironmentId) {
-      _lastEnvironmentId = environment.id;
-      _vibrate();
-      AudioService().playEnvironmentMusic(environment.audioAsset);
-
-      // --- Lógica de Conclusão Automática de Missões (Transporte/Chegada) ---
-      final companion = ref.read(companionProvider);
-      final missionNotifier = ref.read(missionProvider.notifier);
-
-      final activeMission = ref.read(missaoAtivaProvider);
-      if (activeMission != null) {
-        bool shouldComplete = false;
-
-        // Regras de transporte: Conclui ao chegar no ambiente com o NPC correto
-        if (activeMission.id == 'm1_bibliotecario' && environment.id == 'biblioteca' && companion == 'Bibliotecário') {
-          shouldComplete = true;
-        } else if (activeMission.id == 'm3_levar_enfermeira' && environment.id == 'hospital' && companion == 'Enfermeira Joycelina') {
-          shouldComplete = true;
-        } else if (activeMission.id == 'm6_levar_truffles' && environment.id == 'oficina' && companion == 'Truffles') {
-          shouldComplete = true;
-        } else if (activeMission.id == 'm7_investigar_mercadao' && environment.id == 'mercadao') {
-          shouldComplete = true;
-        }
-
-        if (shouldComplete) {
-          missionNotifier.concluirMissao(activeMission.id);
-          _mostrarPopupMissaoConcluida(activeMission.titulo);
-        }
-      }
-      // -------------------------------------------------
-
-      // Salva no Firebase em background — não bloqueia o fluxo do jogo
-      _salvarAmbienteNoFirebase(environment);
-      ref.read(missionProvider.notifier).atualizarMissaoAtiva(environment.id);
-      setState(() {
-        _ambienteAtual = environment;
-        _mostrarPromptDialogo = true;
-      });
-    } else if (environment == null) {
-      _lastEnvironmentId = null;
-      AudioService().stopMusic();
-      ref.read(dialogueProvider.notifier).closeDialogue();
-      setState(() {
-        _ambienteAtual = null;
-        _mostrarPromptDialogo = false;
-      });
-    }
-
-    setState(() {
-      _locationMessage = 'Localização atualizada em tempo real';
-      _coords =
-          'Lat: ${avgLat.toStringAsFixed(6)}, Lon: ${avgLon.toStringAsFixed(6)}';
-      _currentEnvironment = environment != null
-          ? 'Você está em: ${environment.name}'
-          : 'Nenhum ambiente próximo';
-    });
-  }
 
   Future<void> _salvarAmbienteNoFirebase(Environment environment) async {
     try {
@@ -182,41 +124,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         deviceId: deviceId,
         environmentId: environment.id,
       );
-      await firebaseService.desbloquearAmbiente(
-        deviceId: deviceId,
-        environmentId: environment.id,
-      );
 
       ref.read(currentEnvironmentIdProvider.notifier).state = environment.id;
-      final unlocked = [...ref.read(unlockedEnvironmentsProvider)];
-      if (!unlocked.contains(environment.id)) {
-        unlocked.add(environment.id);
-        ref.read(unlockedEnvironmentsProvider.notifier).state = unlocked;
-
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Row(
-                children: [
-                  Icon(Icons.lock_open, color: Colors.green),
-                  SizedBox(width: 10),
-                  Text('Novo Ambiente!'),
-                ],
-              ),
-              content: Text(
-                'Parabéns! Você acabou de desbloquear o acesso ao ambiente: ${environment.name}!',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Incrível!'),
-                ),
-              ],
-            ),
-          );
-        }
-      }
     } catch (e) {
       debugPrint('Firebase não configurado: $e');
     }
@@ -429,6 +338,88 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     await HapticFeedback.heavyImpact();
     await Future.delayed(const Duration(milliseconds: 200));
     await HapticFeedback.heavyImpact();
+  }
+
+  void _mostrarPopupAmbienteBloqueado(String nomeAmbiente) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0D1526),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.redAccent, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.redAccent.withOpacity(0.3),
+                blurRadius: 24,
+                spreadRadius: 4,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF3A1A1A),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.lock_rounded,
+                    color: Colors.redAccent, size: 36),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'AMBIENTE BLOQUEADO',
+                style: TextStyle(
+                  color: Colors.redAccent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                nomeAmbiente,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Siga a história do jogo para liberar esta área.',
+                style: TextStyle(color: Colors.white60, fontSize: 13),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Entendido!',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   // ─── Métodos auxiliares de NPC / Sprite ────────────────────────────────────
