@@ -13,6 +13,7 @@ import 'environments_screen.dart';
 import 'missions_screen.dart';
 import 'beta_battle_screen.dart';
 import 'h15_puzzle_screen.dart';
+import 'ending_screen.dart'; // BUG #6
 import 'dart:async';
 import '../widgets/animated_sprite.dart';
 import '../providers/dialogue_provider.dart';
@@ -35,8 +36,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   bool _mostrarPromptDialogo = false;
   Environment? _ambienteAtual;
 
-  //Integrar Background
+  // BUG #3: rastreia se o usuário ESTÁ atualmente dentro de um ambiente
+  bool _dentroDeUmAmbiente = false;
+
   String _getBackgroundImage() {
+    // BUG #3: se fora de qualquer ambiente, mostra default.png
+    if (!_dentroDeUmAmbiente) return 'assets/backgrounds/default.png';
     switch (_lastEnvironmentId) {
       case 'h15':
         return 'assets/backgrounds/h15.png';
@@ -58,15 +63,30 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-    // Inicia o rastreamento via provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(locationSessionProvider.notifier).startTracking((env) {
-        _handleEnvironmentChange(env);
-      });
+      unawaited(
+        ref.read(locationSessionProvider.notifier).startTracking(
+          onEnvironmentEnter: (env) => _handleEnvironmentChange(env),
+          onEnvironmentExit: () => _handleEnvironmentExit(), // BUG #3
+        ),
+      );
+    });
+  }
+
+  // BUG #3: chamado quando o usuário sai do raio de todos os ambientes
+  void _handleEnvironmentExit() {
+    // Não interrompe diálogo em andamento — só esconde o fundo/NPCs
+    setState(() {
+      _dentroDeUmAmbiente = false;
+      // Mantém _lastEnvironmentId para saber qual NPC estava visible se
+      // o diálogo ainda estiver aberto, mas o background volta ao default.
     });
   }
 
   void _handleEnvironmentChange(Environment environment) {
+    // BUG #3: marca que estamos dentro de um ambiente
+    setState(() => _dentroDeUmAmbiente = true);
+
     if (environment.id != _lastEnvironmentId) {
       final unlocked = ref.read(unlockedEnvironmentsProvider);
       if (!unlocked.contains(environment.id)) {
@@ -103,13 +123,19 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       _salvarAmbienteNoFirebase(environment);
       ref.read(missionProvider.notifier).atualizarMissaoAtiva(environment.id);
 
-      // FIX: Only show dialogue prompt if we are not already in a conversation
+      // BUG #5: só mostra prompt se NÃO houver diálogo em andamento
       final currentDialogue = ref.read(dialogueProvider);
-      setState(() {
-        _ambienteAtual = environment;
-        _mostrarPromptDialogo = (currentDialogue == null);
-      });
+      if (currentDialogue == null) {
+        setState(() {
+          _ambienteAtual = environment;
+          _mostrarPromptDialogo = true;
+        });
+      }
+      // Se houver diálogo em andamento, não faz nada — o diálogo continua
+      // e quando terminar o usuário poderá iniciar o do novo ambiente
     }
+    // BUG #5: se o environment.id == _lastEnvironmentId (GPS voltou após
+    // sair brevemente), NÃO reinicia o diálogo nem mostra prompt novamente
   }
 
   @override
@@ -144,7 +170,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       final currentEnvId = ref.read(currentEnvironmentIdProvider);
       final unlocked = ref.read(unlockedEnvironmentsProvider);
 
-      // CORREÇÃO: lê as missões antes de salvar para não sobrescrever
       final progressAtual = await firebaseService.carregarProgresso(deviceId);
       final missoesConcluidas = progressAtual?.missoesConcluidas ?? [];
 
@@ -154,7 +179,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         gender: player?.gender.name ?? 'male',
         currentEnvironmentId: currentEnvId,
         unlockedEnvironments: unlocked,
-        missoesConcluidas: missoesConcluidas, // antes era const []
+        missoesConcluidas: missoesConcluidas,
         escolhas: const {},
       );
 
@@ -210,8 +235,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Salvar Jogo
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -243,8 +266,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-
-              // NOVO: botão Missões
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -268,8 +289,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-
-              // Ver Ambientes
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -427,7 +446,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
   // ─── Métodos auxiliares de NPC / Sprite ────────────────────────────────────
 
-  /// Sprite do NPC correspondente ao ambiente atual.
   String _getNpcSpriteForEnvironment(String? environmentId) {
     switch (environmentId) {
       case 'h15':
@@ -445,7 +463,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     }
   }
 
-  /// Nome de exibição do NPC correspondente ao ambiente atual.
   String _getNpcNameForEnvironment(String? environmentId) {
     switch (environmentId) {
       case 'h15':
@@ -463,25 +480,58 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     }
   }
 
-  /// ID do diálogo a ser iniciado para o ambiente atual.
+  /// BUG #4: Retorna o ID correto do diálogo para o ambiente.
+  /// No H15 verifica se o mercadão já foi concluído para liberar o arco final,
+  /// e se o jogador já está na penúltima+ missão para não reiniciar o intro.
   String _getDialogueIdForEnvironment(String? environmentId) {
+    if (environmentId == 'h15') {
+      return _resolverDialogoH15();
+    }
     switch (environmentId) {
-      case 'h15':
-        return 'h15_intro_0';
       case 'biblioteca':
         return 'biblio_intro_1';
       case 'hospital':
-        return 'hospital_intro_1';
+        // BUG #2: o ID correto no script é 'hosp_intro_1', não 'hospital_intro_1'
+        return 'hosp_intro_1';
       case 'oficina':
         return 'oficina_intro_1';
       case 'mercadao':
         return 'mercadao_intro_1';
       default:
-        return 'h15_intro_1';
+        return 'h15_intro_0';
     }
   }
 
-  /// Sprite do jogador conforme o gênero selecionado no onboarding.
+  /// BUG #4: decide qual arco do H15 iniciar.
+  /// Regras:
+  ///   - Se m10_interromper_sistema está desbloqueado (mercadão concluído)
+  ///     E o usuário retornou ao H15 → inicia h15_final_0
+  ///   - Caso contrário → inicia o intro normal (h15_intro_0)
+  String _resolverDialogoH15() {
+    final missions = ref.read(missionProvider).asData?.value ?? [];
+
+    // Verifica se a missão que exige retorno ao H15 está ativa ou pendente
+    // e se o mercadão já foi concluído (m9 concluída)
+    final m9 = missions.firstWhere(
+      (m) => m.id == 'm9_derrotar_beta',
+      orElse: () => missions.first,
+    );
+    final m10 = missions.firstWhere(
+      (m) => m.id == 'm10_interromper_sistema',
+      orElse: () => missions.first,
+    );
+
+    // BUG #4: só libera o arco final do H15 se:
+    // 1. m9 (Confronto Lógico) está concluída — confirma que o mercadão foi concluído
+    // 2. m10 ainda não está concluída (senão o jogo já acabou)
+    if (m9.isConcluida && !m10.isConcluida) {
+      return 'h15_final_0';
+    }
+
+    // Caso contrário, intro normal
+    return 'h15_intro_0';
+  }
+
   String _getPlayerSprite() {
     final player = ref.read(playerProvider);
     final isFemale = player?.gender.name == 'female';
@@ -655,7 +705,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     );
   }
 
-  /// Item entregue ao jogador ao concluir o diálogo correto de cada ambiente.
   String? _getItemDoAmbiente(String? environmentId) {
     switch (environmentId) {
       case 'h15':
@@ -700,7 +749,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
           return Stack(
             fit: StackFit.expand,
             children: [
-              // FUNDO
+              // FUNDO — BUG #3: usa _dentroDeUmAmbiente para decidir o background
               Positioned.fill(
                 child: Image.asset(
                   _getBackgroundImage(),
@@ -708,8 +757,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 ),
               ),
 
-              // NPCs — só aparecem dentro de um ambiente ativo
-              if (_lastEnvironmentId != null) ...[
+              // NPCs — BUG #3: só aparecem se estiver DENTRO de um ambiente
+              if (_dentroDeUmAmbiente && _lastEnvironmentId != null) ...[
                 if (_lastEnvironmentId == 'h15')
                   Positioned(
                     left: w * 0.06, bottom: h * 0.04,
@@ -838,7 +887,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 ),
 
               // PROMPT
-              if (_mostrarPromptDialogo && currentDialogue == null)
+              if (_mostrarPromptDialogo && currentDialogue == null && _dentroDeUmAmbiente)
                 Positioned(
                   left: 0,
                   right: 0,
@@ -852,6 +901,18 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                       ref.read(dialogueProvider.notifier).startDialogue(
                         dialogueId,
                         onComplete: (nodeId) {
+                          // BUG #6: Se terminou o jogo, vai para a tela final
+                          if (nodeId == 'h15_final_fim') {
+                            if (mounted) {
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(builder: (_) => const EndingScreen()),
+                                (route) => false,
+                              );
+                            }
+                            return;
+                          }
+
                           final item = _getItemDoAmbiente(envId);
                           if (item != null && mounted) _mostrarPopupItemRecebido(item);
 

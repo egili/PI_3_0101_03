@@ -15,7 +15,7 @@ class AudioService {
     if (!_musicEnabled) return;
     try {
       await _musicPlayer.setReleaseMode(ReleaseMode.loop);
-      await _musicPlayer.play(AssetSource('audio/menu_music.mp3'));
+      await _musicPlayer.play(AssetSource('audio/main_theme.mp3'));
     } catch (e) {
       debugPrint('AudioService: erro ao tocar música do menu: $e');
     }

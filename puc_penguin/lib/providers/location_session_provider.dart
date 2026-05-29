@@ -25,12 +25,13 @@ class LocationSessionState {
     String? currentEnvironment,
     Environment? environment,
     bool? promptDialogue,
+    bool clearEnvironment = false,
   }) {
     return LocationSessionState(
       locationMessage: locationMessage ?? this.locationMessage,
       coords: coords ?? this.coords,
       currentEnvironment: currentEnvironment ?? this.currentEnvironment,
-      environment: environment ?? this.environment,
+      environment: clearEnvironment ? null : (environment ?? this.environment),
       promptDialogue: promptDialogue ?? this.promptDialogue,
     );
   }
@@ -44,16 +45,50 @@ class LocationSessionNotifier extends StateNotifier<LocationSessionState> {
   final List<double> _lonBuffer = [];
   static const int _bufferSize = 5;
 
-  void startTracking(void Function(Environment) onEnvironmentChange) {
+  // BUG #3: aceita callback separado para saída de ambiente
+  Future<void> startTracking({
+    required void Function(Environment) onEnvironmentEnter,
+    required void Function() onEnvironmentExit,
+  }) async {
+    // Verifica se o GPS está ativado
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      state = state.copyWith(locationMessage: 'GPS desativado. Ative a localização.');
+      return;
+    }
+
+    // Verifica e solicita permissão de localização
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        state = state.copyWith(locationMessage: 'Permissão de localização negada.');
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      state = state.copyWith(locationMessage: 'Permissão negada permanentemente. Ative nas configurações.');
+      return;
+    }
+
     _locationService.getPositionStream().listen(
-      (Position position) => _updateLocation(position, onEnvironmentChange),
+      (Position position) => _updateLocation(
+        position,
+        onEnvironmentEnter: onEnvironmentEnter,
+        onEnvironmentExit: onEnvironmentExit,
+      ),
       onError: (error) {
         state = state.copyWith(locationMessage: 'Erro ao atualizar localização: $error');
       },
     );
   }
 
-  void _updateLocation(Position position, void Function(Environment) onEnvironmentChange) {
+  void _updateLocation(
+    Position position, {
+    required void Function(Environment) onEnvironmentEnter,
+    required void Function() onEnvironmentExit,
+  }) {
     _latBuffer.add(position.latitude);
     _lonBuffer.add(position.longitude);
     if (_latBuffer.length > _bufferSize) _latBuffer.removeAt(0);
@@ -63,16 +98,25 @@ class LocationSessionNotifier extends StateNotifier<LocationSessionState> {
     final avgLon = _lonBuffer.reduce((a, b) => a + b) / _lonBuffer.length;
 
     final environment = _checkActiveEnvironment(avgLat, avgLon);
+    final wasInEnvironment = state.environment != null;
+    final isNowInEnvironment = environment != null;
 
     state = state.copyWith(
       locationMessage: 'Localização atualizada em tempo real',
       coords: 'Lat: ${avgLat.toStringAsFixed(6)}, Lon: ${avgLon.toStringAsFixed(6)}',
-      currentEnvironment: environment != null ? 'Você está em: ${environment.name}' : 'Nenhum ambiente próximo',
+      currentEnvironment: environment != null
+          ? 'Você está em: ${environment.name}'
+          : 'Nenhum ambiente próximo',
       environment: environment,
+      clearEnvironment: environment == null,
     );
 
-    if (environment != null) {
-      onEnvironmentChange(environment);
+    if (isNowInEnvironment) {
+      // Entrou ou permanece em um ambiente
+      onEnvironmentEnter(environment!);
+    } else if (wasInEnvironment && !isNowInEnvironment) {
+      // BUG #3: saiu de todos os ambientes
+      onEnvironmentExit();
     }
   }
 

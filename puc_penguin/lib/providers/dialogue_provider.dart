@@ -21,7 +21,6 @@ class DialogueNotifier extends Notifier<DialogueNode?> {
   @override
   DialogueNode? build() => null;
 
-  /// Define o nome do jogador para substituição de {nome} nas falas
   void setPlayerName(String name) {
     _playerName = name;
   }
@@ -33,29 +32,33 @@ class DialogueNotifier extends Notifier<DialogueNode?> {
   }
 
   void next() {
+    // CORREÇÃO BUG #2: salva o ID atual ANTES de modificar state
+    final currentId = state?.id;
     if (state?.nextNodeId != null) {
       final raw = gameScript[state!.nextNodeId!];
       state = raw != null ? _applyName(raw) : null;
-      if (state == null) _finishDialogue(previousId: state?.id);
+      if (state == null) _finishDialogue(previousId: currentId);
     } else {
-      _finishDialogue(previousId: state?.id);
+      _finishDialogue(previousId: currentId);
     }
   }
 
   void makeChoice(DialogueChoice choice) {
     if (choice.onSelect != null) choice.onSelect!();
 
-    // Gatilho de estado: se o jogador escolheu comer no Mercadão
     if (choice.nextNodeId == 'mercadao_comeu') {
       ref.read(playerProvider.notifier).setConsumedSabotagedFood(true);
     }
 
     if (choice.nextNodeId != null) {
-      final raw = gameScript[choice.nextNodeId!];
+      // CORREÇÃO BUG #2: salva o nextNodeId ANTES de modificar state
+      final nextId = choice.nextNodeId!;
+      final raw = gameScript[nextId];
       state = raw != null ? _applyName(raw) : null;
-      if (state == null) _finishDialogue(previousId: choice.nextNodeId);
+      if (state == null) _finishDialogue(previousId: nextId);
     } else {
-      _finishDialogue(previousId: state?.id);
+      final currentId = state?.id;
+      _finishDialogue(previousId: currentId);
     }
   }
 
@@ -64,9 +67,6 @@ class DialogueNotifier extends Notifier<DialogueNode?> {
     state = null;
   }
 
-  // ── internos ──────────────────────────────────────────────────────────────
-
-  /// Substitui {nome} no texto e nas opções do nó
   DialogueNode _applyName(DialogueNode node) {
     if (_playerName.isEmpty || !node.text.contains('{nome}')) return node;
     final newText = node.text.replaceAll('{nome}', _playerName);

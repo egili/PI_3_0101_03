@@ -7,9 +7,9 @@ import '../screens/missions_screen.dart';
 import '../screens/environments_screen.dart';
 import '../screens/onboarding_screen.dart';
 import '../screens/tutorial_screen.dart';
+import '../screens/ending_screen.dart';
 import 'transitions.dart';
 
-/// Nomes de rotas centralizados — evite strings espalhadas pelo código.
 class AppRoutes {
   AppRoutes._();
 
@@ -20,19 +20,12 @@ class AppRoutes {
   static const String missions = '/missions';
   static const String environments = '/environments';
   static const String tutorial = '/tutorial';
+  static const String ending = '/ending'; // BUG #6: tela final
 }
 
-/// Roteador central do aplicativo.
-///
-/// Registre aqui todas as rotas e suas transições. Para navegar, use:
-/// ```dart
-/// Navigator.pushNamed(context, AppRoutes.game);
-/// Navigator.pushNamed(context, AppRoutes.missions);
-/// ```
 class AppRouter {
   AppRouter._();
 
-  /// Mapeamento de rota → transição escolhida.
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case AppRoutes.home:
@@ -84,8 +77,14 @@ class AppRouter {
           settings: settings,
         );
 
+      case AppRoutes.ending:
+        return AppTransitions.route(
+          const EndingScreen(),
+          type: TransitionType.fade,
+          settings: settings,
+        );
+
       default:
-        // Rota desconhecida — mostra tela de erro simples
         return AppTransitions.route(
           Scaffold(
             body: Center(child: Text('Rota não encontrada: ${settings.name}')),
