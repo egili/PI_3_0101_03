@@ -47,7 +47,7 @@ final List<Environment> staticEnvironments = [
     description: 'Mesas viradas, bandejas espalhadas, freezer escondido com cabos de energia.',
     latitude: -22.833043531432814,
     longitude: -47.05205417217558,
-    radius: 30.0,
+    radius: 35.0,
     audioAsset: 'assets/audio/refeitorio_theme.mp3',
     isUnlocked: false,
   ),

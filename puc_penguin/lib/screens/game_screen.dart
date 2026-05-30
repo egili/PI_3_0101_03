@@ -460,6 +460,14 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   // ─── Métodos auxiliares de NPC / Sprite ────────────────────────────────────
 
   String _getNpcSpriteForEnvironment(String? environmentId) {
+    if (environmentId == 'mercadao') {
+      final currentDialogue = ref.read(dialogueProvider);
+      final characterName = currentDialogue?.characterName ?? '';
+      if (characterName == 'Beta') {
+        return 'assets/npcs/Beta/Beta.png';
+      }
+      return 'assets/npcs/Frigelino/Frigelino.png';
+    }
     switch (environmentId) {
       case 'h15':
         return 'assets/npcs/Pingulino/Pingulino.png';
@@ -469,8 +477,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         return 'assets/npcs/Joycelina/Joycelina.png';
       case 'oficina':
         return 'assets/npcs/Truffles/Truffles.png';
-      case 'mercadao':
-        return 'assets/npcs/Frigelino/Frigelino.png';
       default:
         return 'assets/npcs/Pingulino/Pingulino.png';
     }
@@ -523,25 +529,29 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   String _resolverDialogoH15() {
     final missions = ref.read(missionProvider).asData?.value ?? [];
 
-    // Verifica se a missão que exige retorno ao H15 está ativa ou pendente
-    // e se o mercadão já foi concluído (m9 concluída)
-    final m9 = missions.firstWhere(
-      (m) => m.id == 'm9_derrotar_beta',
-      orElse: () => missions.first,
-    );
-    final m10 = missions.firstWhere(
-      (m) => m.id == 'm10_interromper_sistema',
-      orElse: () => missions.first,
-    );
+    // Todas as missões do mercadão devem estar concluídas antes de liberar o arco final
+    const missoesMercadao = ['m7_investigar_mercadao', 'm8_investigar_painel', 'm9_derrotar_beta'];
 
-    // BUG #4: só libera o arco final do H15 se:
-    // 1. m9 (Confronto Lógico) está concluída — confirma que o mercadão foi concluído
-    // 2. m10 ainda não está concluída (senão o jogo já acabou)
-    if (m9.isConcluida && !m10.isConcluida) {
-      return 'h15_final_0';
+    final todasMercadaoConcluidas = missoesMercadao.every((id) {
+      try {
+        return missions.firstWhere((m) => m.id == id).isConcluida;
+      } catch (_) {
+        return false;
+      }
+    });
+
+    final m10Concluida = () {
+      try {
+        return missions.firstWhere((m) => m.id == 'm10_interromper_sistema').isConcluida;
+      } catch (_) {
+        return false;
+      }
+    }();
+
+    if (todasMercadaoConcluidas && !m10Concluida) {
+      return 'h15_final_1';
     }
 
-    // Caso contrário, intro normal
     return 'h15_intro_0';
   }
 
@@ -916,6 +926,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                         onComplete: (nodeId) {
                           // BUG #6: Se terminou o jogo, vai para a tela final
                           if (nodeId == 'h15_final_fim') {
+                            ref.read(missionProvider.notifier).concluirMissao('m10_interromper_sistema');
                             if (mounted) {
                               Navigator.pushAndRemoveUntil(
                                 context,

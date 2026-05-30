@@ -65,7 +65,6 @@ final List<Mission> staticMissions = [
     id: 'm10_interromper_sistema',
     titulo: 'Quebrando a Lógica',
     descricao: 'Retorne ao H15 e interrompa o sistema central do reator.',
-    environmentId: 'mercadao',
-    proximoEnvironmentId: 'h15',
+    environmentId: 'h15',
   ),
 ];
