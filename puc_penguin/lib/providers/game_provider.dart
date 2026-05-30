@@ -11,8 +11,37 @@ import '../services/device_id_service.dart';
 // ─────────────────────────────────────────────
 
 class PlayerNotifier extends Notifier<Player?> {
+  final _storageService = StorageService();
+
   @override
   Player? build() => null;
+
+  Future<void> setPlayer(Player player) async {
+    state = player;
+    await _storageService.savePlayerName(player.name);
+    await _storageService.savePlayerGender(
+        player.gender == Gender.male ? 'male' : 'female');
+  }
+
+  void setConsumedSabotagedFood(bool value) {
+    if (state == null) return;
+    state = state!.copyWith(consumedSabotagedFood: value);
+  }
+
+  Future<void> loadPlayer() async {
+    final name = await _storageService.loadPlayerName();
+    final genderStr = await _storageService.loadPlayerGender();
+    if (name != null && genderStr != null) {
+      state = Player(
+        name: name,
+        gender: genderStr == 'male' ? Gender.male : Gender.female,
+      );
+    }
+  }
+
+  void clearProfile() {
+    state = null;
+  }
 }
 
 class CurrentEnvironmentIdNotifier extends Notifier<String?> {
