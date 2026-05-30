@@ -1,22 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/dialogue.dart';
 import '../constants/script.dart';
-import 'game_provider.dart';
 
 // Nós finais corretos de cada arco — disparam onComplete ao fechar
 const _finalNodes = {
-  'h15_mission_end',
+  'h15_intro_13',
   'biblio_joycelina_4',
   'hosp_recalibra_6',
   'oficina_concluir_3',
   'mercadao_batalha_inicio',
-  'h15_final_4a',
-  'h15_final_fim',
 };
 
 class DialogueNotifier extends Notifier<DialogueNode?> {
-  void Function(String nodeId)? _onComplete;
-  String _playerName = '';
+  Function(String)? _onComplete;
+  String _playerName = 'Jogador';
 
   @override
   DialogueNode? build() => null;
@@ -25,40 +22,39 @@ class DialogueNotifier extends Notifier<DialogueNode?> {
     _playerName = name;
   }
 
-  void startDialogue(String startNodeId, {void Function(String nodeId)? onComplete}) {
+  DialogueNode _injectName(DialogueNode node) {
+    if (!node.text.contains('{nome}')) return node;
+    return DialogueNode(
+      id: node.id,
+      characterName: node.characterName,
+      text: node.text.replaceAll('{nome}', _playerName),
+      nextNodeId: node.nextNodeId,
+      choices: node.choices,
+    );
+  }
+
+  void startDialogue(String startNodeId, {Function(String)? onComplete}) {
     _onComplete = onComplete;
-    final raw = gameScript[startNodeId];
-    state = raw != null ? _applyName(raw) : null;
+    final node = gameScript[startNodeId];
+    state = node != null ? _injectName(node) : null;
   }
 
   void next() {
-    // CORREÇÃO BUG #2: salva o ID atual ANTES de modificar state
-    final currentId = state?.id;
     if (state?.nextNodeId != null) {
-      final raw = gameScript[state!.nextNodeId!];
-      state = raw != null ? _applyName(raw) : null;
-      if (state == null) _finishDialogue(previousId: currentId);
+      final node = gameScript[state!.nextNodeId!];
+      state = node != null ? _injectName(node) : null;
     } else {
-      _finishDialogue(previousId: currentId);
+      _finishDialogue();
     }
   }
 
   void makeChoice(DialogueChoice choice) {
     if (choice.onSelect != null) choice.onSelect!();
-
-    if (choice.nextNodeId == 'mercadao_comeu') {
-      ref.read(playerProvider.notifier).setConsumedSabotagedFood(true);
-    }
-
     if (choice.nextNodeId != null) {
-      // CORREÇÃO BUG #2: salva o nextNodeId ANTES de modificar state
-      final nextId = choice.nextNodeId!;
-      final raw = gameScript[nextId];
-      state = raw != null ? _applyName(raw) : null;
-      if (state == null) _finishDialogue(previousId: nextId);
+      final node = gameScript[choice.nextNodeId!];
+      state = node != null ? _injectName(node) : null;
     } else {
-      final currentId = state?.id;
-      _finishDialogue(previousId: currentId);
+      _finishDialogue();
     }
   }
 
@@ -67,26 +63,14 @@ class DialogueNotifier extends Notifier<DialogueNode?> {
     state = null;
   }
 
-  DialogueNode _applyName(DialogueNode node) {
-    if (_playerName.isEmpty || !node.text.contains('{nome}')) return node;
-    final newText = node.text.replaceAll('{nome}', _playerName);
-    return DialogueNode(
-      id: node.id,
-      characterName: node.characterName,
-      text: newText,
-      nextNodeId: node.nextNodeId,
-      choices: node.choices,
-    );
-  }
-
-  void _finishDialogue({String? previousId}) {
-    final lastId = previousId ?? state?.id;
-    final wasCorrectEnding = lastId != null && _finalNodes.contains(lastId);
+  void _finishDialogue() {
+    final wasCorrectEnding = state != null && _finalNodes.contains(state!.id);
+    final nodeId = state?.id;
     state = null;
-    if (wasCorrectEnding && lastId != null) {
+    if (wasCorrectEnding) {
       final callback = _onComplete;
       _onComplete = null;
-      callback?.call(lastId);
+      callback?.call(nodeId ?? '');
     } else {
       _onComplete = null;
     }

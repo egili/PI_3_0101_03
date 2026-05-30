@@ -80,7 +80,7 @@ class EndingScreen extends ConsumerWidget {
               // Créditos
               _creditSection('Desenvolvido por', 'Grupo 03 — PUC-Campinas'),
               const SizedBox(height: 12),
-              _creditSection('Disciplina', 'Projetos Interdisciplinares'),
+              _creditSection('Disciplina', 'Projetos Integrador'),
               const SizedBox(height: 48),
               // Botão novo jogo
               SizedBox(

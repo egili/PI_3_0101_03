@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/location_service.dart';
@@ -45,35 +46,33 @@ class LocationSessionNotifier extends StateNotifier<LocationSessionState> {
   final List<double> _lonBuffer = [];
   static const int _bufferSize = 5;
 
-  // BUG #3: aceita callback separado para saída de ambiente
-  Future<void> startTracking({
+  Future<StreamSubscription?> startTracking({
     required void Function(Environment) onEnvironmentEnter,
     required void Function() onEnvironmentExit,
   }) async {
-    // Verifica se o GPS está ativado
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       state = state.copyWith(locationMessage: 'GPS desativado. Ative a localização.');
-      return;
+      return null;
     }
 
-    // Verifica e solicita permissão de localização
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         state = state.copyWith(locationMessage: 'Permissão de localização negada.');
-        return;
+        return null;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      state = state.copyWith(locationMessage: 'Permissão negada permanentemente. Ative nas configurações.');
-      return;
+      state = state.copyWith(
+          locationMessage: 'Permissão negada permanentemente. Ative nas configurações.');
+      return null;
     }
 
-    _locationService.getPositionStream().listen(
-      (Position position) => _updateLocation(
+    final subscription = _locationService.getPositionStream().listen(
+      (position) => _updateLocation(
         position,
         onEnvironmentEnter: onEnvironmentEnter,
         onEnvironmentExit: onEnvironmentExit,
@@ -82,6 +81,8 @@ class LocationSessionNotifier extends StateNotifier<LocationSessionState> {
         state = state.copyWith(locationMessage: 'Erro ao atualizar localização: $error');
       },
     );
+
+    return subscription;
   }
 
   void _updateLocation(
@@ -97,7 +98,17 @@ class LocationSessionNotifier extends StateNotifier<LocationSessionState> {
     final avgLat = _latBuffer.reduce((a, b) => a + b) / _latBuffer.length;
     final avgLon = _lonBuffer.reduce((a, b) => a + b) / _lonBuffer.length;
 
-    final environment = _checkActiveEnvironment(avgLat, avgLon);
+    // Usa a média suavizada para ENTRAR (evita falsos positivos de GPS instável)
+    // Usa a posição bruta para SAIR (reage imediatamente ao cruzar o raio)
+    final environmentByAvg = _checkActiveEnvironment(avgLat, avgLon);
+    final environmentByRaw = _checkActiveEnvironment(position.latitude, position.longitude);
+
+    final environment = (environmentByAvg != null &&
+            environmentByRaw != null &&
+            environmentByAvg.id == environmentByRaw.id)
+        ? environmentByAvg
+        : null;
+
     final wasInEnvironment = state.environment != null;
     final isNowInEnvironment = environment != null;
 
@@ -112,27 +123,29 @@ class LocationSessionNotifier extends StateNotifier<LocationSessionState> {
     );
 
     if (isNowInEnvironment) {
-      // Entrou ou permanece em um ambiente
       onEnvironmentEnter(environment!);
     } else if (wasInEnvironment && !isNowInEnvironment) {
-      // BUG #3: saiu de todos os ambientes
       onEnvironmentExit();
     }
   }
 
   Environment? _checkActiveEnvironment(double lat, double lon) {
     for (var env in staticEnvironments) {
-      double distance = Geolocator.distanceBetween(lat, lon, env.latitude, env.longitude);
+      double distance =
+          Geolocator.distanceBetween(lat, lon, env.latitude, env.longitude);
       if (distance <= env.radius) return env;
     }
     return null;
   }
 
   void clear() {
+    _latBuffer.clear();
+    _lonBuffer.clear();
     state = LocationSessionState();
   }
 }
 
-final locationSessionProvider = StateNotifierProvider<LocationSessionNotifier, LocationSessionState>((ref) {
+final locationSessionProvider =
+    StateNotifierProvider<LocationSessionNotifier, LocationSessionState>((ref) {
   return LocationSessionNotifier();
 });

@@ -32,6 +32,7 @@ class GameScreen extends ConsumerStatefulWidget {
 
 class _GameScreenState extends ConsumerState<GameScreen> {
   String? _lastEnvironmentId;
+  String? _lastBlockedEnvironmentId; // evita spam do popup de bloqueado
   bool _salvando = false;
   bool _mostrarPromptDialogo = false;
   Environment? _ambienteAtual;
@@ -64,11 +65,15 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(
-        ref.read(locationSessionProvider.notifier).startTracking(
-          onEnvironmentEnter: (env) => _handleEnvironmentChange(env),
-          onEnvironmentExit: () => _handleEnvironmentExit(), // BUG #3
-        ),
+      // Injeta o nome do jogador nos diálogos
+      final player = ref.read(playerProvider);
+      if (player != null) {
+        ref.read(dialogueProvider.notifier).setPlayerName(player.name);
+      }
+
+      ref.read(locationSessionProvider.notifier).startTracking(
+        onEnvironmentEnter: (env) => _handleEnvironmentChange(env),
+        onEnvironmentExit: () => _handleEnvironmentExit(), // BUG #3
       );
     });
   }
@@ -78,8 +83,8 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     // Não interrompe diálogo em andamento — só esconde o fundo/NPCs
     setState(() {
       _dentroDeUmAmbiente = false;
-      // Mantém _lastEnvironmentId para saber qual NPC estava visible se
-      // o diálogo ainda estiver aberto, mas o background volta ao default.
+      _ambienteAtual = null; // FIX: limpa ambiente atual ao sair
+      _lastBlockedEnvironmentId = null; // permite mostrar popup novamente ao re-entrar
     });
   }
 
@@ -90,9 +95,17 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     if (environment.id != _lastEnvironmentId) {
       final unlocked = ref.read(unlockedEnvironmentsProvider);
       if (!unlocked.contains(environment.id)) {
-        _mostrarPopupAmbienteBloqueado(environment.name);
+        if (_lastBlockedEnvironmentId != environment.id) {
+          _lastBlockedEnvironmentId = environment.id;
+          _mostrarPopupAmbienteBloqueado(environment.name);
+        }
+        // FIX: ambiente bloqueado — não exibe o cenário dele, mantém o default
+        setState(() {
+          _dentroDeUmAmbiente = false;
+        });
         return;
       }
+      _lastBlockedEnvironmentId = null; // resetar ao entrar em ambiente desbloqueado
 
       _lastEnvironmentId = environment.id;
       _vibrate();
